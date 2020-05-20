@@ -1,6 +1,6 @@
 @objc(CDVAdvanceDownloader) class CDVAdvanceDownloader:CDVPlugin {
 
-    var progressCallbackId: 
+    var progressCallbackId: String?
     
     override func pluginInitialize() {
         // アプリ起動時にここが呼ばれる
@@ -29,7 +29,6 @@
         //     result?.keepCallback = true
         //     self.commandDelegate.send(result, callbackId: progressCallbackId)
         // }
-
 
         // 非同期処理や時間がかかるものに関して commandDelegate の run(inBackground: {}) メソッドを利用してやる
         // commandDelegate.run(inBackground: { 
