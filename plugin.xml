@@ -5,8 +5,8 @@
 	<engines>
 		<engine name="cordova-android" version=">=7.1.0" />
 	</engines>
-  <js-module src="www/CordovaTools.js" name='CordovaTools' >
-    <clobbers target="CordovaTools" />
+  <js-module src="www/AdvanceDownloader.js" name='AdvanceDownloader' >
+    <clobbers target="AdvanceDownloader" />
   </js-module>
 
   <!-- iOS -->
