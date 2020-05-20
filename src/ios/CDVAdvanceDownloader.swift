@@ -9,12 +9,13 @@
     
     @objc func add(_ command: CDVInvokedUrlCommand) {
         // TODO: something
-
-        // 結果を生成して返す 
-        let result = CDVPluginResult(status: CDVCommandStatus_OK)
         
+        let value = command.argument(at: 0) as! String
+        
+        // 結果を生成して返す 
+//        let result = CDVPluginResult(status: CDVCommandStatus_OK)
         // result にいろいろなデータを渡して返してあげることができる
-        // let result = CDVPluginResult(status: CDVCommandStatus_OK,  messageAs: "hi")
+         let result = CDVPluginResult(status: CDVCommandStatus_OK,  messageAs: value)
 
         // 辞書式配列で返すことが可能 (その場合勝手に js 側では json になる)
         // let result = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: ["hoge": "foo"])

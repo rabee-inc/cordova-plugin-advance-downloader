@@ -20,10 +20,19 @@
 // Wait for the deviceready event before using any of Cordova's device APIs.
 // See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
 document.addEventListener('deviceready', onDeviceReady, false);
+function onDeviceReady() {   
+    // button
+    const button1 = document.querySelector('.button1') 
+    button1.addEventListener('click', hello);
+}
 
-function onDeviceReady() {
-    // Cordova is now initialized. Have fun!
+function hello() {
+    window.AdvanceDownloader.add('test').then((v) => {
+        const value = v;
+        window.alert(value);
+    })
+}
 
-    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
-    document.getElementById('deviceready').classList.add('ready');
+
+function add() {  
 }

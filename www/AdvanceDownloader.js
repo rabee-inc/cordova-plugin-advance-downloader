@@ -4,22 +4,31 @@ var exec = require('cordova/exec');
 
 // cordova exec
 var _AdvanceDownloader = {
-    start: (onSuccess, onFail, param) => {
-        return exec(onSuccess, onFail, 'AdvanceDownloader', 'start', [param]);
+    // param -> path, url, header, filename
+    add: (onSuccess, onFail, param) => {
+        return exec(onSuccess, onFail, 'AdvanceDownloader', 'add', [param]);
     },
+    // param -> id
+    get: (onSuccess, onFail, param) => {
+
+    },
+
+    
+
+
 };
   
 // Promise wrapper
 var AdvanceDownloader = {
-    start: (params) => {
+    add: (params) => {
         return new Promise((resolve, reject) => {
-        _AdvanceDownloader.start((res) => {
-            resolve(res);
-        }, (err) => {
-            reject(err);
-        }, params);
+            _AdvanceDownloader.add((res) => {
+                resolve(res);
+            }, (err) => {
+                reject(err);
+            }, params);
         });
     },
 }
 
-module.exports = CordovaTools;
+module.exports = AdvanceDownloader;
