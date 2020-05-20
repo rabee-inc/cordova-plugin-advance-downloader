@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-advance-downloader" version="0.0.1">
+  <name>Cordova Plugin Advance Downloader</name>
+  <description>High functionality download plugin for cordova</description>
+	<engines>
+		<engine name="cordova-android" version=">=7.1.0" />
+	</engines>
+  <js-module src="www/CordovaTools.js" name='CordovaTools' >
+    <clobbers target="CordovaTools" />
+  </js-module>
+
+  <!-- iOS -->
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*">
+      <feature name="AdvanceDownloader">
+        <param name="onload" value="true" />
+        <param name="ios-package" value="CDVAdvanceDownloader" />
+      </feature>
+
+      <preference name="deployment-target" value="11.0" />
+    </config-file>
+    <!-- source -->
+    <source-file src="src/ios/CDVAdvanceDownloader.swift" />
+    <source-file src="src/ios/CDVAdvanceDownloader-Bridging-Header.h" />
+
+    <!-- ios -->
+    <podspec>
+      <config>
+        <source url="https://github.com/CocoaPods/Specs.git"/>
+      </config>
+      <pods use-frameworks="true">
+        <pod name="Alamofire" spec="~> 5.2" />
+      </pods>
+    </podspec>
+
+    <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/>
+    <preference name="UseSwiftLanguageVersion" default="5" />
+  </platform>
+</plugin>
