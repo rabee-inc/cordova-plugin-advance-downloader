@@ -11,8 +11,7 @@ $ cordova -v
 
 ### ios の場合、 pod 使うので pod　のインストールをお願いします
 
-留意点
-- pod の version を 1.8.0 以上にしておく
+留意点 ... pod の version を 1.8.0 以上にしておく
 
 
 ### 開発環境で確認
@@ -39,6 +38,14 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 の二つかなと思います。別途ファイルを追加する場合は、plugin.xml に追加するファイルを既述する必要があるので、ご注意ください。
 
 
-## 留意点
+## 開発の留意点
 
-- 面倒くさいんですが、demo 内の pakcage-lock.json と package.json の差分はプッシュしないでもらえると助かります
+### 何かおかしくなったら、
+```bash
+$ yarn clean
+$ yarn add:ios
+```
+
+
+### プッシュするもの
+基本的には `./src/**/*` と `www/src/`
