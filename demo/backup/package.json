@@ -13,19 +13,5 @@
         "ecosystem:cordova"
     ],
     "author": "Apache Cordova Team",
-    "license": "Apache-2.0",
-    "devDependencies": {
-        "cordova-ios": "^6.0.0-nightly.2020.4.30.e65d685c",
-        "cordova-plugin-advance-downloader": "file:.."
-    },
-    "cordova": {
-        "platforms": [
-            "ios"
-        ],
-        "plugins": {
-            "cordova-plugin-advance-downloader": {
-                "USESWIFTLANGUAGEVERSION": "5"
-            }
-        }
-    }
+    "license": "Apache-2.0"
 }
