@@ -18,8 +18,9 @@ $ cordova -v
 
 ## ビルド
 
-以下コマンドで platform を追加後、xcode or android studio で開いちゃってください
-普通にビルドすれば動きます
+- 開発したプラグインを cordova で使ってみるために demo フォルダーがあります。
+- demo フォルダーでビルドして確認してくだい
+- 以下コマンドで platform を追加後、xcode or android studio で開いて、そこから run すれば動きます
 
 
 ```bash
