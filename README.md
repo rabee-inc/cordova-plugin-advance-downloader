@@ -9,7 +9,7 @@ $ cordova -v
 ```
 
 
-### ios の場合、 pod 使うので pod　のインストールをお願いします
+### ios の場合、 cocoapod 使うので pod　のインストールをお願いします
 
 留意点 ... pod の version を 1.8.0 以上にしておく
 
