@@ -14,7 +14,7 @@ $ cordova -v
 留意点 ... pod の version を 1.8.0 以上にしておく
 
 
-### 開発環境で確認
+## ビルド
 以下コマンドで platform を追加後、xcode or android studio で開いちゃってください
 普通にビルドすれば動きます
 
