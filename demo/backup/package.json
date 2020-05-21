@@ -7,7 +7,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "clean": "rm -rf platforms plugins node_modules package-lock.json; cp ./backup/package.json ./package.json;",
-        "add:ios": "cordova platform add ios; cordova plugin add .. --link"
+        "add:ios": "cordova platform add ios; cordova plugin add .. --link",
+        "build:ios": "cordova build ios"
     },
     "keywords": [
         "ecosystem:cordova"
