@@ -9,12 +9,15 @@ $ cordova -v
 ```
 
 
-### ios の場合、 cocoapod 使うので pod　のインストールをお願いします
+### iOS の場合 cocoapod のインストール
 
-留意点 ... pod の version を 1.8.0 以上にしておく
+- cocoapods 使ってるので、 cocoapods の方のインストールをお願いします
+- インストール方法は割愛します。自分は rbenv 使って ruby install して gem 入れてます
+- 留意点 ... pod の version を 1.8.0 以上にしておく
 
 
 ## ビルド
+
 以下コマンドで platform を追加後、xcode or android studio で開いちゃってください
 普通にビルドすれば動きます
 
