@@ -85,9 +85,10 @@ $ yarn add:ios
 基本的には `./src/**/*` と `www/src/` だけで大丈夫です
 
 
-## ブリッジ interface
+## js のインターフェースたたき台
 
 
+### 関数一覧
 ```js
 // 新規ダウンロードの追加
 add: (params) => createAction('add', params),
@@ -117,4 +118,76 @@ on: (id, action, callback) => {
 },
 // イベントの削除
 off: (params) => createAction('off', params),
+```
+
+### parameter の想定
+
+```ts
+// 追加時
+interface AddRequestParams {
+    url: string,     // ダウンロード元URL
+    path: string,    // ファイルを保存するパスを渡せる
+    fileName: string // hogehoge.mp3
+}
+interface AddResponseParams {
+    id: string,
+    fileName: string // hogehoge.mp3
+    absolutePath: string 
+}
+
+// スタート
+interface StartRequestParams {
+    id: string
+}
+interface startResponseParams {
+    id: string,
+    filename: string,
+    absolutePath: string
+}
+
+// 一時停止
+interface PauseRequestParams {
+    id: string
+}
+interface PauseResponseParams {
+    id: string,
+    filename: string,
+    absolutePath: string
+}
+
+// 再開
+interface ResumeRequestParams {
+    id: string
+}
+interface ResumeResponseParams {
+    id: string,
+    filename: string,
+    absolutePath: string
+}
+
+// ストップ
+interface StopRequestParams {
+    id: string
+}
+interface StopResponseParams {
+    id: string,
+    filename: string,
+    absolutePath: string
+}
+
+// on
+type ActionType = 'start' | 'pause' | 'resume' | 'stop' | 'complete' | 'fail'
+interface onRequestParams {
+    id: string,
+    action:  ActionType
+}
+interface onResponseParams {}
+
+// off
+type ActionType = 'start' | 'pause' | 'resume' | 'stop' | 'complete' | 'fail'
+interface onRequestParams {
+    id: string,
+    action:  ActionType
+}
+interface onResponseParams {}
 ```
