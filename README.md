@@ -51,6 +51,27 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 
 ## 開発の留意点
 
+### フォルダ-構成
+
+```
+- demo
+    - package.json
+    - www // cordova 上で表示する HTML/CSS/JS
+        + css
+        + img
+        + js 
+            - index.js <- ここに画面に関するロジックを書く
+        + index.html　<- こいつをいじると画面が反映される
+
+- src <-  各プラットフォームのソースファイルが入っている
+    + ios
+    + android
+
+- www 
+ + AdvanceDownloader.js <- ブリッジとなる js ファイル (js inteface)
+
+```
+
 ### 何かおかしくなったら、
 ```bash
 $ yarn clean
