@@ -55,7 +55,7 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 
 ```
 - demo
-    - www // cordova 上で表示する HTML/CSS/JS
+    - www <- cordova 上で表示する HTML/CSS/JS
         + css
         + img
         + js 
