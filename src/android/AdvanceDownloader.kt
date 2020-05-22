@@ -1,4 +1,4 @@
-package cordova.plugin
+package jp.rabee
 
 import org.apache.cordova.*
 import org.json.JSONArray
@@ -9,7 +9,7 @@ class AdvanceDownloader : CordovaPlugin() {
     lateinit var context: CallbackContext
 
     // アプリ起動時に呼ばれる
-    public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
+    override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
     }
 
