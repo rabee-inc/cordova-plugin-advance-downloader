@@ -2,7 +2,7 @@
   "name": "cordova-plugin-advance-downloader",
   "version": "0.0.1",
   "description": "cordova-plugin-advance-downloader",
-  "cordova" : {
+  "cordova": {
     "id": "cordova-plugin-advance-downloader",
     "platforms": [
       "ios",
@@ -23,7 +23,9 @@
     "url": "https://github.com/rabee-inc/cordova-plugin-advance-downloader/issues"
   },
   "dependencies": {
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "sax": "1.2.4",
+    "q": "1.5.1"
   },
   "homepage": "https://github.com/rabee-inc/cordova-plugin-advance-downloader#readme",
   "keywords": [
