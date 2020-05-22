@@ -9,14 +9,18 @@ $ cordova -v
 ```
 
 
-### ios の場合、 pod 使うので pod　のインストールをお願いします
+### iOS の場合 cocoapod のインストール
 
-留意点 ... pod の version を 1.8.0 以上にしておく
+- cocoapods 使ってるので、 cocoapods の方のインストールをお願いします
+- インストール方法は割愛します。自分は rbenv 使って ruby install して gem 入れてます
+- 留意点 ... pod の version を 1.8.0 以上にしておく
 
 
-### 開発環境で確認
-以下コマンドで platform を追加後、xcode or android studio で開いちゃってください
-普通にビルドすれば動きます
+## ビルド
+
+- 開発したプラグインを cordova で使ってみるために demo フォルダーがあります。
+- demo フォルダーでビルドして確認してくだい
+- 以下コマンドで platform を追加後、xcode or android studio で開いて、そこから run すれば動きます
 
 
 ```bash
@@ -36,6 +40,13 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 ![image](https://user-images.githubusercontent.com/13277036/82432757-79292680-9acb-11ea-8716-cac2396be7c9.png)
 
 の二つかなと思います。別途ファイルを追加する場合は、plugin.xml に追加するファイルを既述する必要があるので、ご注意ください。
+
+
+## 画面をいじる
+
+- cordova なので HTML ファイルをいじってください
+- `Demo/www/**` がビルド時にバンドルされる HTML/CSS/JS になります
+- とりあえずテストボタンを追加しております
 
 
 ## 開発の留意点
