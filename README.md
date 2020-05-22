@@ -55,7 +55,6 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 
 ```
 - demo
-    - package.json
     - www // cordova 上で表示する HTML/CSS/JS
         + css
         + img
@@ -69,6 +68,9 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 
 - www 
  + AdvanceDownloader.js <- ブリッジとなる js ファイル (js inteface)
+
+- plugin.xml <- プラグインの情報 (pod とかはここで追加する)
+
 
 ```
 
