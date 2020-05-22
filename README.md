@@ -45,7 +45,7 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 ## 画面をいじる
 
 - cordova なので HTML ファイルをいじってください
-- `Demo/www/**` がビルド時にバンドルされる HTML/CSS/JS になります
+- `demo/www/**` がビルド時にバンドルされる HTML/CSS/JS になります
 - とりあえずテストボタンを追加しております
 
 
@@ -60,7 +60,7 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
         + img
         + js 
             - index.js <- ここに画面に関するロジックを書く
-        + index.html　<- こいつをいじると画面が反映される
+        + index.html　<- こいつをいじると画面が変わる
 
 - src <-  各プラットフォームのソースファイルが入っている
     + ios
