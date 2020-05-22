@@ -5,7 +5,8 @@
   "cordova" : {
     "id": "cordova-plugin-advance-downloader",
     "platforms": [
-      "ios"
+      "ios",
+      "android"
     ]
   },
   "main": "index.js",
@@ -22,12 +23,13 @@
     "url": "https://github.com/rabee-inc/cordova-plugin-advance-downloader/issues"
   },
   "dependencies": {
-    "xml2js": "^0.4.19"
+    "xml2js": "^0.4.23"
   },
   "homepage": "https://github.com/rabee-inc/cordova-plugin-advance-downloader#readme",
   "keywords": [
     "ecosystem:cordova",
     "cordova-ios",
+    "cordova-android",
     "cordova:plugin",
     "plugin"
   ]
