@@ -8,15 +8,15 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "clean": "rm -rf platforms plugins node_modules package-lock.json; cp ./backup/package.json ./package.json;",
         "add:ios": "cordova platform add ios; cordova plugin add .. --link",
-        "build:ios": "cordova build ios;"
+        "build:ios": "cordova build ios"
     },
     "keywords": [
         "ecosystem:cordova"
     ],
     "author": "Apache Cordova Team",
     "license": "Apache-2.0",
-    "devDependencies": {
-        "cordova-ios": "^6.0.0-nightly.2020.4.30.e65d685c",
+    "dependencies": {
+        "cordova-ios": "^5.1.0-nightly.2019.11.10.9964c74b",
         "cordova-plugin-advance-downloader": "file:.."
     },
     "cordova": {

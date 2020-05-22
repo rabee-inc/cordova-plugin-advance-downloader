@@ -59,4 +59,39 @@ $ yarn add:ios
 
 
 ### プッシュするもの
-基本的には `./src/**/*` と `www/src/`
+基本的には `./src/**/*` と `www/src/` だけで大丈夫です
+
+
+## ブリッジ interface
+
+
+```js
+// 新規ダウンロードの追加
+add: (params) => createAction('add', params),
+// ダウンロードの取得
+getTasks: (params) => createAction('getTasks', params),
+// 特定の id のダウンロードの開始
+start: (params) => createAction('start', params),
+// 特定の id のダウンロードの一時停止
+pause: (params) => createAction('pause', params),
+// 特定の id のダウンロードの再開
+resume: (params) => createAction('resume', params),
+// 特定の id のダウンロードの中断
+stop: (params) => createAction('stop', params),
+// イベントの登録
+on: (id, action, callback) => {
+    // action === start | pause | resume | stop | complete | fail;
+    exec(
+        (data) => {
+            // 成功
+            callback(data)
+        },
+        () => {
+            // 失敗
+            // TODO: error handling
+        },'AdvanceDownloader', action, [id, action]
+    );
+},
+// イベントの削除
+off: (params) => createAction('off', params),
+```
