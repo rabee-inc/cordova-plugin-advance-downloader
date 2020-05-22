@@ -128,6 +128,9 @@ interface AddRequestParams {
     url: string,     // ダウンロード元URL
     path: string,    // ファイルを保存するパスを渡せる
     fileName: string // hogehoge.mp3
+    headers: { // 認証ヘッダー
+        auautherization: stirng
+    }
 }
 interface AddResponseParams {
     id: string,
