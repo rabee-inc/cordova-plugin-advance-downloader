@@ -45,6 +45,8 @@
     <source-file src="src/ios/CDVAdvanceDownloader-Bridging-Header.h" />
     <source-file src="src/ios/CDVADDownload.swift" />
     <source-file src="src/ios/CDVADUserDefaults.swift" />
+    <soruce-file src="src/ios/CDVADSystem.swift" />
+    <soruce-file src="src/ios/CDVADNotification.swift" />
 
     <!-- ios -->
     <podspec>
