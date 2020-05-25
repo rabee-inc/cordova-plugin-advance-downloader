@@ -62,6 +62,7 @@ class CDVADDownload {
 extension CDVADDownload {
     
     func clean() {
+        mutex.lock()
         let downloadingFileURLs = CDVADUserDefaults.downloadingFileURLs
         for downloadingFileURL in downloadingFileURLs {
             guard let url = URL(string: downloadingFileURL) else { continue }
@@ -72,15 +73,18 @@ extension CDVADDownload {
             }
         }
         CDVADUserDefaults.downloadingFileURLs = []
+        mutex.unlock()
     }
     
     func add(task: CDVADTask) {
         mutex.lock()
-        
-        guard tasks[task.id] == nil else { return }
+        guard tasks[task.id] == nil else {
+            mutex.unlock()
+            return
+        }
         tasks[task.id] = task
-        
         mutex.unlock()
+        
         task.onChangeStatus?(.Waiting)
     }
     
@@ -93,35 +97,56 @@ extension CDVADDownload {
     }
     
     func start(id: String) {
-        guard let task = tasks[id] else { return }
-        run(task: task)
+        mutex.lock()
+        guard var task = tasks[id] else {
+            mutex.unlock()
+            return
+        }
+        run(task: &task)
+        mutex.unlock()
     }
     
     func pause(id: String) {
-        guard var task = tasks[id], let request = task.request, task.status == .Processing else { return }
-        
+        mutex.lock()
+        guard var task = tasks[id], let request = task.request, task.status == .Processing else {
+            mutex.unlock()
+            return
+        }
         request.suspend()
-        
         task.status = .Paused
+        tasks[id] = task
+        mutex.unlock()
+        
         task.onChangeStatus?(.Paused)
     }
     
     func resume(id: String) {
-        guard var task = tasks[id], let request = task.request, task.status == .Paused else { return }
-        
+        mutex.lock()
+        guard var task = tasks[id], let request = task.request, task.status == .Paused else {
+            mutex.unlock()
+            return
+        }
         request.resume()
-        
         task.status = .Processing
+        tasks[id] = task
+        mutex.unlock()
+        
         task.onChangeStatus?(.Processing)
     }
     
     func cancel(id: String) {
+        mutex.lock()
         guard var task = tasks[id], let request = task.request,
-            task.status == .Waiting || task.status == .Processing || task.status == .Paused else { return }
+            task.status == .Waiting || task.status == .Processing || task.status == .Paused else {
+            mutex.unlock()
+            return
+        }
         
         request.cancel()
-        
         task.status = .Canceled
+        tasks[id] = task
+        mutex.unlock()
+        
         task.onChangeStatus?(.Canceled)
     }
 }
@@ -129,9 +154,7 @@ extension CDVADDownload {
 // Private
 extension CDVADDownload {
     
-    private func run(task: CDVADTask) {
-        var task = task
-        
+    private func run(task: inout CDVADTask) {
         task.status = .Processing
         task.onChangeStatus?(.Processing)
         
@@ -141,11 +164,9 @@ extension CDVADDownload {
         CDVADUserDefaults.downloadingFileURLs = downloadingFileURLs
         
         // バックグラウンドタスク開始
-        mutex.lock()
         if backgroundTaskID == stopBackgroundTaskID {
             backgroundTaskID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
         }
-        mutex.unlock()
         
         // 保存先の指定
         let destination: DownloadRequest.Destination = { _, _ in
@@ -153,22 +174,21 @@ extension CDVADDownload {
         }
         
         // ダウンロード開始
+        let id = task.id
         let req = URLRequest(url: task.url)
         let request = manager.download(req, to: destination)
-            .downloadProgress(closure: { progress in
-                task.onProgress?(Float(progress.fractionCompleted))
+            .downloadProgress(closure: { [weak self] progress in
+                guard let self = self else { return }
+                self.setProgress(id: id, progress: Float(progress.fractionCompleted))
             })
             .response(completionHandler: { [weak self] response in
                 guard let self = self else { return }
                 if let err = response.error {
-                    task.status = .Failed
-                    task.onChangeStatus?(.Failed)
-                    task.onFailed?(err)
+                    self.setFailed(id: id, err: err)
                 } else {
-                    task.status = .Complete
-                    task.onChangeStatus?(.Complete)
-                    task.onComplete?(fileURL)
+                    self.setComplete(id: id, fileURL: fileURL)
                     
+                    self.mutex.lock()
                     var downloadingFileURLs = CDVADUserDefaults.downloadingFileURLs
                     for i in 0 ..< downloadingFileURLs.count {
                         let downloadingFileURL = downloadingFileURLs[i]
@@ -177,6 +197,7 @@ extension CDVADDownload {
                         }
                     }
                     CDVADUserDefaults.downloadingFileURLs = downloadingFileURLs
+                    self.mutex.unlock()
                 }
                 
                 // バックグラウンドタスク終了
@@ -195,6 +216,46 @@ extension CDVADDownload {
                 self.mutex.unlock()
             })
         task.request = request
+        tasks[id] = task
+    }
+    
+    private func setProgress(id: String, progress: Float) {
+        mutex.lock()
+        guard let task = tasks[id] else {
+            mutex.unlock()
+            return
+        }
+        mutex.unlock()
+        
+        task.onProgress?(progress)
+    }
+    
+    private func setComplete(id: String, fileURL: URL) {
+        mutex.lock()
+        guard var task = tasks[id] else {
+            mutex.unlock()
+            return
+        }
+        task.status = .Complete
+        tasks[id] = task
+        mutex.unlock()
+        
+        task.onChangeStatus?(.Complete)
+        task.onComplete?(fileURL)
+    }
+    
+    private func setFailed(id: String, err: Error) {
+        mutex.lock()
+        guard var task = tasks[id] else {
+            mutex.unlock()
+            return
+        }
+        task.status = .Failed
+        tasks[id] = task
+        mutex.unlock()
+        
+        task.onChangeStatus?(.Failed)
+        task.onFailed?(err)
     }
     
     private func generateFileURL(filePath: String, fileName: String) -> URL {
