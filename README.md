@@ -5,7 +5,7 @@
 
 ```bash
 $ npm install -g cordova@10.0.0-nightly.2020.5.20.7b8e8678
-$ cordova -v 
+$ cordova -v
 ```
 
 
@@ -51,6 +51,27 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
 
 ## 開発の留意点
 
+### package.jsonなどの更新をしたくない
+
+無視させたいとき
+
+```
+git update-index --skip-worktree package.json
+git update-index --skip-worktree package-lock.json
+```
+
+無視設定を解除したいとき
+
+```
+git update-index --no-skip-worktree [ファイル名]
+```
+
+設定の確認
+
+```
+git ls-files -v
+```
+
 ### フォルダ-構成
 
 ```
@@ -58,7 +79,7 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
     - www <- cordova 上で表示する HTML/CSS/JS
         + css
         + img
-        + js 
+        + js
             - index.js <- ここに画面に関するロジックを書く
         + index.html　<- こいつをいじると画面が変わる
 
@@ -66,7 +87,7 @@ $ open ./platforms/android # このフォルダ以下が android の開発環境
     + ios
     + android
 
-- www 
+- www
  + AdvanceDownloader.js <- ブリッジとなる js ファイル (js inteface)
 
 - plugin.xml <- プラグインの情報 (pod とかはここで追加する)
@@ -135,7 +156,7 @@ interface AddRequestParams {
 interface AddResponseParams {
     id: string,
     fileName: string // hogehoge.mp3
-    absolutePath: string 
+    absolutePath: string
 }
 
 // スタート
