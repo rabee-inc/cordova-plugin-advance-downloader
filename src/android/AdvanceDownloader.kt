@@ -24,7 +24,8 @@ class AdvanceDownloader : CordovaPlugin() {
         var result = true
         when(action) {
             "add" -> {
-                val value = data.getString(0)
+                val value = data.getJSONArray(0)
+
                 result = this.add(value, context)
             }
             else -> {
@@ -37,10 +38,10 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     // ダウンロードの追加
-    private fun add(inputValue: String, callbackContext: CallbackContext): Boolean {
+    private fun add(inputValue: JSONArray, callbackContext: CallbackContext): Boolean {
 
         val input = inputValue
-        val output = "Kotlin says \"$input\""
+        val output = "Kotlin says"
 
         val result = PluginResult(PluginResult.Status.OK, output)
         // callback を何回も呼び出したい場合は以下を既述する(ダウンロードの進捗状況を返したい時など)
