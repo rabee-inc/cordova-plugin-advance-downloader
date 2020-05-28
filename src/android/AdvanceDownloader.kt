@@ -41,7 +41,7 @@ class AdvanceDownloader : CordovaPlugin() {
     private fun add(inputValue: JSONObject, callbackContext: CallbackContext): Boolean {
 
         val input = inputValue.get("url")
-        val output = input
+        val output = "Kotlin says:" + input
 
         val result = PluginResult(PluginResult.Status.OK, output)
         // callback を何回も呼び出したい場合は以下を既述する(ダウンロードの進捗状況を返したい時など)

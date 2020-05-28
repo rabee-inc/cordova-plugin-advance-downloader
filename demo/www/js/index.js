@@ -38,7 +38,7 @@ function hello() {
     }
 
     window.AdvanceDownloader.add(addRequestParams).then((v) => {
-        console.log('aa')
+        window.alert(v)
     });
 }
 
