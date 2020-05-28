@@ -1,16 +1,20 @@
 package jp.rabee
 
+import android.net.Uri
 import org.apache.cordova.*
 import org.json.JSONException
-import android.util.Log
 import org.json.*
-
 
 class AdvanceDownloader : CordovaPlugin() {
     lateinit var context: CallbackContext
 
     // 別の callback context を用意する
     lateinit var onProgressCallbackContext: CallbackContext
+
+    val onChangedStatusCallbackIDs = mutableMapOf<String, Array<String>>()
+    val onProgressCallbackIDs = mutableMapOf<String, Array<String>>()
+    val onCompleteCallbackIDs = mutableMapOf<String, Array<String>>()
+    val onFailedCallbackIDs = mutableMapOf<String, Array<String>>()
 
     // アプリ起動時に呼ばれる
     override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
@@ -20,12 +24,10 @@ class AdvanceDownloader : CordovaPlugin() {
     // js 側で関数が実行されるとこの関数がまず発火する
     @Throws(JSONException::class)
     override fun execute(action: String, data: JSONArray, callbackContext: CallbackContext): Boolean {
-        context = callbackContext
         var result = true
         when(action) {
             "add" -> {
-                val value = data.getString(0)
-                result = this.add(value, context)
+                result = this.add(data, callbackContext)
             }
             else -> {
                 // TODO error
@@ -37,10 +39,17 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     // ダウンロードの追加
-    private fun add(inputValue: String, callbackContext: CallbackContext): Boolean {
+    private fun add(data: JSONArray, callbackContext: CallbackContext): Boolean {
 
-        val input = inputValue
-        val output = "Kotlin says \"$input\""
+        val value = data.getString(0)
+        val urlStr = data.getString(1)
+        val url = Uri.parse(urlStr)
+        val headers = data.getJSONObject(2)
+        val size = data.getInt(3)
+        val filePath = data.getString(4)
+        val fileName = data.getString(4)
+
+        val output = "Kotlin says \"$value\""
 
         val result = PluginResult(PluginResult.Status.OK, output)
         // callback を何回も呼び出したい場合は以下を既述する(ダウンロードの進捗状況を返したい時など)

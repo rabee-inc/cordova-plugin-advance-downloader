@@ -1,6 +1,10 @@
 dependencies {
     compile 'com.android.support:multidex:1.0.3'
+
     // some plugin to use, write here
+    def work_version = "2.3.4"
+    implementation "androidx.work:work-runtime:$work_version"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
 }
 android {
     dexOptions {
