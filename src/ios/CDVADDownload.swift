@@ -25,6 +25,7 @@ typealias CDVADTaskOnFailed = (String) -> Void
 struct CDVADTask {
     var id: String
     var url: URL
+    var headers: [String: String]
     var size: Int
     var filePath: String
     var fileName: String
@@ -36,9 +37,10 @@ struct CDVADTask {
     var onComplete: CDVADTaskOnComplete?
     var onFailed: CDVADTaskOnFailed?
     
-    init(id: String, url: URL, size: Int, filePath: String, fileName: String) {
+    init(id: String, url: URL, headers: [String:String], size: Int, filePath: String, fileName: String) {
         self.id = id
         self.url = url
+        self.headers = headers
         self.size = size
         self.filePath = filePath
         self.fileName = fileName
@@ -185,7 +187,10 @@ extension CDVADDownload {
         }
         
         // ダウンロード開始
-        let req = URLRequest(url: task.url)
+        var req = URLRequest(url: task.url)
+        for (field, value) in task.headers {
+            req.setValue(value, forHTTPHeaderField: field)
+        }
         let request = manager.download(req, to: destination)
             .downloadProgress(closure: { [weak self] progress in
                 guard let self = self else { return }

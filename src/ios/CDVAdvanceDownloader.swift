@@ -39,9 +39,10 @@
             let id = command.argument(at: 0) as? String,
             let urlStr = command.argument(at: 1) as? String,
             let url = URL(string: urlStr),
-            let size = command.argument(at: 2) as? Int,
-            let filePath = command.argument(at: 3) as? String,
-            let fileName = command.argument(at: 4) as? String else {
+            let headers = command.argument(at: 2) as? [String:String],
+            let size = command.argument(at: 3) as? Int,
+            let filePath = command.argument(at: 4) as? String,
+            let fileName = command.argument(at: 5) as? String else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -50,7 +51,7 @@
             return
         }
         
-        var task = CDVADTask(id: id, url: url, size: size, filePath: filePath, fileName: fileName)
+        var task = CDVADTask(id: id, url: url, headers: headers, size: size, filePath: filePath, fileName: fileName)
         task.onChangeStatus = { [weak self] status in
             guard let self = self, let cIDs = self.onChangedStatusCallbackIDs[id] else { return }
             let result: [String:Any] = [
