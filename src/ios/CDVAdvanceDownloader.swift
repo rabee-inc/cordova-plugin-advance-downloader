@@ -20,6 +20,7 @@
             results.append([
                 "id": task.id,
                 "url": task.url,
+                "headers": task.headers,
                 "size": task.size,
                 "file_path": task.filePath,
                 "file_name": task.fileName,
