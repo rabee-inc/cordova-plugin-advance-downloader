@@ -27,7 +27,8 @@ class AdvanceDownloader : CordovaPlugin() {
         var result = true
         when(action) {
             "add" -> {
-                result = this.add(data, callbackContext)
+                val value = data.getJSONArray(0)
+                result = this.add(value, context)
             }
             else -> {
                 // TODO error
@@ -39,17 +40,18 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     // ダウンロードの追加
-    private fun add(data: JSONArray, callbackContext: CallbackContext): Boolean {
+    private fun add(inputValue: JSONArray, callbackContext: CallbackContext): Boolean {
 
-        val value = data.getString(0)
-        val urlStr = data.getString(1)
-        val url = Uri.parse(urlStr)
-        val headers = data.getJSONObject(2)
-        val size = data.getInt(3)
-        val filePath = data.getString(4)
-        val fileName = data.getString(4)
+        val input = inputValue
+        val output = "Kotlin says"
 
-        val output = "Kotlin says \"$value\""
+//        val value = data.getString(0)
+//        val urlStr = data.getString(1)
+//        val url = Uri.parse(urlStr)
+//        val headers = data.getJSONObject(2)
+//        val size = data.getInt(3)
+//        val filePath = data.getString(4)
+//        val fileName = data.getString(4)
 
         val result = PluginResult(PluginResult.Status.OK, output)
         // callback を何回も呼び出したい場合は以下を既述する(ダウンロードの進捗状況を返したい時など)

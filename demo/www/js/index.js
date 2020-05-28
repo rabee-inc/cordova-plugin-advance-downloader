@@ -27,10 +27,19 @@ function onDeviceReady() {
 }
 
 function hello() {
-    window.AdvanceDownloader.add('test').then((v) => {
-        const value = v;
-        window.alert(value);
-    })
+    const addRequestParams = {
+        id: 'absfldsfsfjlsdfjs',
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        path: 'hoge',
+        headers: { // 認証ヘッダー
+            auautherization: 'hoge.com',
+        }
+
+    }
+
+    window.AdvanceDownloader.add(addRequestParams).then((v) => {
+        console.log('aa')
+    });
 }
 
 
