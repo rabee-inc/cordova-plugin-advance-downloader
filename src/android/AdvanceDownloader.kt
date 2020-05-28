@@ -27,7 +27,7 @@ class AdvanceDownloader : CordovaPlugin() {
         var result = true
         when(action) {
             "add" -> {
-                val value = data.getJSONArray(0)
+                val value = data.getJSONObject(0)
                 result = this.add(value, context)
             }
             else -> {
@@ -36,14 +36,13 @@ class AdvanceDownloader : CordovaPlugin() {
         }
 
         return result
-
     }
 
     // ダウンロードの追加
-    private fun add(inputValue: JSONArray, callbackContext: CallbackContext): Boolean {
+    private fun add(inputValue: JSONObject, callbackContext: CallbackContext): Boolean {
 
-        val input = inputValue
-        val output = "Kotlin says"
+        val input = inputValue.get("url")
+        val output = "Kotlin says:" + input
 
 //        val value = data.getString(0)
 //        val urlStr = data.getString(1)
