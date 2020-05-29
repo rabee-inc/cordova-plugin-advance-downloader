@@ -1,11 +1,44 @@
 dependencies {
     compile 'com.android.support:multidex:1.0.3'
 
+    implementation 'com.google.code.gson:gson:2.8.6'
+
     // some plugin to use, write here
     def work_version = "2.3.4"
     implementation "androidx.work:work-runtime:$work_version"
     implementation "androidx.work:work-runtime-ktx:$work_version"
-}
+
+    def lifecycle_version = "2.2.0"
+    def arch_version = "2.1.0"
+
+    // ViewModel
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    // LiveData
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    // Lifecycles only (without ViewModel or LiveData)
+    // implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+
+    // Saved state module for ViewModel
+    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version"
+
+    // Annotation processor
+    // kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
+    // alternately - if using Java8, use the following instead of lifecycle-compiler
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+
+    // optional - helpers for implementing LifecycleOwner in a Service
+    implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
+
+    // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+    implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+
+    // optional - ReactiveStreams support for LiveData
+    implementation "androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version"
+
+    // optional - Test helpers for LiveData
+    testImplementation "androidx.arch.core:core-testing:$arch_version"
+    }
+
 android {
     dexOptions {
         jumboMode true
@@ -19,4 +52,13 @@ android {
             srcDirs += 'src/main/kotlin'
         }
     }
+    // TODO: アプリ側で jvmTarget = '1.8' が必要かも
+    // compileOptions {
+    //     sourceCompatibility JavaVersion.VERSION_1_8
+    //     targetCompatibility JavaVersion.VERSION_1_8
+
+    //     kotlinOptions {
+    //         jvmTarget = '1.8'
+    //     }
+    // }
 }
