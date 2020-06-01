@@ -1,3 +1,34 @@
+struct CDVADParam {
+    var id: String?
+    var url: URL?
+    var headers: [String:String]?
+    var size: Int?
+    var filePath: String?
+    var fileName: String?
+    
+    init(cmd: CDVInvokedUrlCommand) {
+        guard let args = cmd.argument(at: 0) as? [String:Any] else { return }
+        if let arg = args["id"] as? String {
+            id = arg
+        }
+        if let arg = args["url"] as? String, let u = URL(string: arg) {
+            url = u
+        }
+        if let arg = args["headers"] as? [String:String] {
+            headers = arg
+        }
+        if let arg = args["size"] as? Int {
+            size = arg
+        }
+        if let arg = args["file_path"] as? String {
+            filePath = arg
+        }
+        if let arg = args["file_name"] as? String {
+            fileName = arg
+        }
+    }
+}
+
 @objc(CDVAdvanceDownloader) class CDVAdvanceDownloader: CDVPlugin {
 
     var client = CDVADDownload()
@@ -36,14 +67,14 @@
     
     // ダウンロードを追加
     @objc func add(_ command: CDVInvokedUrlCommand) {
+        let param = CDVADParam(cmd: command)
         guard
-            let id = command.argument(at: 0) as? String,
-            let urlStr = command.argument(at: 1) as? String,
-            let url = URL(string: urlStr),
-            let headers = command.argument(at: 2) as? [String:String],
-            let size = command.argument(at: 3) as? Int,
-            let filePath = command.argument(at: 4) as? String,
-            let fileName = command.argument(at: 5) as? String else {
+            let id = param.id,
+            let url = param.url,
+            let headers = param.headers,
+            let size = param.size,
+            let filePath = param.filePath,
+            let fileName = param.fileName else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -118,7 +149,8 @@
 
     // ダウンロードを開始
     @objc func start(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -138,7 +170,8 @@
 
     // ダウンロードを一時停止
     @objc func pause(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -158,7 +191,8 @@
 
     // ダウンロードを再開
     @objc func resume(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -178,7 +212,8 @@
 
     // ダウンロードをキャンセル
     @objc func stop(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -198,7 +233,8 @@
     
     // ステータス変更のコールバックを設定
     @objc func setOnChangedStatus(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -222,7 +258,8 @@
     
     // ステータス変更のコールバックを解除
     @objc func removeOnChangedStatus(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -248,7 +285,8 @@
     
     // プログレスのコールバックを設定
     @objc func setOnProgress(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -272,7 +310,8 @@
     
     // プログレスのコールバックを解除
     @objc func removeOnProgressStatus(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -298,7 +337,8 @@
     
     // ダウンロード成功のコールバックを設定
     @objc func setOnComplete(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -322,7 +362,8 @@
     
     // ダウンロード成功のコールバックを解除
     @objc func removeOnComplete(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -348,7 +389,8 @@
     
     // ダウンロード失敗のコールバックを設定
     @objc func setOnFailed(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
            let result = ["message": "invalid argument"]
            commandDelegate.send(
                CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
@@ -372,7 +414,8 @@
     
     // ダウンロード失敗のコールバックを解除
     @objc func removeOnFailed(_ command: CDVInvokedUrlCommand) {
-        guard let id = command.argument(at: 0) as? String else {
+        let param = CDVADParam(cmd: command)
+        guard let id = param.id else {
             let result = ["message": "invalid argument"]
             commandDelegate.send(
                 CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
