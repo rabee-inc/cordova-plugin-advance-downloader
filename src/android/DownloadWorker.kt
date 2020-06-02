@@ -8,6 +8,7 @@ class DownloadWorker(cxt: Context, params: WorkerParameters) : Worker(cxt, param
     override fun doWork(): Result {
         //TODO: inputDataからParamsを取得する
 //        val url = inputData.getString("url")
+        val data = inputData
         return Result.success()
     }
 }

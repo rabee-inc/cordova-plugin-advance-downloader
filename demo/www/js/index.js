@@ -30,7 +30,9 @@ function hello() {
     const addRequestParams = {
         id: 'absfldsfsfjlsdfjs',
         url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        size: 123456789,
         path: 'hoge',
+        name: 'dummy.pdf',
         headers: { // 認証ヘッダー
             auautherization: 'hoge.com',
         }

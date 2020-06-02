@@ -1,6 +1,5 @@
 package jp.rabee
 
-import android.net.Uri
 import androidx.work.*
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
@@ -24,43 +23,32 @@ class AdvanceDownloader : CordovaPlugin() {
         cContext = callbackContext
 
         var result = true
+        val value = data.getJSONObject(0)
         when(action) {
             "list" -> {
                 result = this.list(cContext)
             }
             "get" -> {
-                val value = data.getJSONObject(0)
                 val id = value.getString("id")
                 result = this.get(id, cContext)
             }
             "add" -> {
-                val value = data.getJSONObject(0)
-                val task = AdvanceDownloadTask(
-                        id = value.getString("id"),
-                        url = Uri.parse(value.getString("url")),
-//                        headers = value.getJSONObject("headers"),
-                        filePath = value.getString("path")
-
-                )
+                val task = Gson().fromJson(value.toString(), AdvanceDownloadTask::class.java)
                 result = this.add(task, cContext)
             }
             "start" -> {
-                val value = data.getJSONObject(0)
                 val id = value.getString("id")
                 result = this.start(id, cContext)
             }
             "pause" -> {
-                val value = data.getJSONObject(0)
                 val id = value.getString("id")
                 result = this.pause(id, cContext)
             }
             "resume" -> {
-                val value = data.getJSONObject(0)
                 val id = value.getString("id")
                 result = this.resume(id, cContext)
             }
             "cancel" -> {
-                val value = data.getJSONObject(0)
                 val id = value.getString("id")
                 result = this.cancel(id, cContext)
             }
@@ -80,11 +68,12 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     private fun get(id: String, callbackContext: CallbackContext): Boolean {
-//        callback を何回も呼び出したい場合は以下を既述する(ダウンロードの進捗状況を返したい時など)
-//        result.keepCallback = true
-//        時間のかかる処理とか非同期処理は cordova threadPool を使って下しあ
-//            cordova.threadPool.run {
-//        }
+        val task = tasks[id]
+        task ?: return false
+
+        val output = Gson().toJson(tasks)
+        val result = PluginResult(PluginResult.Status.OK, output)
+        callbackContext.sendPluginResult(result)
         return true
     }
 
@@ -98,11 +87,17 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        //FIXME: 以下は不要なので削除すること
+        //TODO: DEMO用なので以下は削除すること
         val data = Data.Builder().apply {
             putString("id", advanceDownloadTask.id)
-            putString("url", advanceDownloadTask.url.toString())
+            putString("url", advanceDownloadTask.url)
             putString("path", advanceDownloadTask.filePath)
+            putString("name", advanceDownloadTask.fileName)
+            putInt("size", advanceDownloadTask.size)
+            putDouble("progress", advanceDownloadTask.progress)
+            advanceDownloadTask.headers.forEach { (k, v) ->
+                putString(k, v)
+            }
         }.build()
 
         cordova.activity.runOnUiThread {
@@ -129,8 +124,14 @@ class AdvanceDownloader : CordovaPlugin() {
 
         val data = Data.Builder().apply {
             putString("id", task.id)
-            putString("url", task.url.toString())
+            putString("url", task.url)
             putString("path", task.filePath)
+            putString("name", task.fileName)
+            putInt("size", task.size)
+            putDouble("progress", task.progress)
+            task.headers.forEach { (k, v) ->
+                putString(k, v)
+            }
         }.build()
 
         cordova.activity.runOnUiThread {

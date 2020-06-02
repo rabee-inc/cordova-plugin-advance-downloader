@@ -1,5 +1,6 @@
 package jp.rabee
 
+import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.work.*
@@ -8,6 +9,8 @@ import java.util.concurrent.TimeUnit
 class DownloadWorkerManager {
 
     companion object {
+        protected val TAG = "DownloadWorkerManager"
+
         //WorkManagerが動く上での制約
         private fun createConstraints() =
                 Constraints.Builder()
@@ -38,9 +41,9 @@ class DownloadWorkerManager {
                     .observe(lifecycleOwner, Observer { workInfo ->
                         if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
                             callback()
-//                            Log.d("WorkManagerInfo:Success${work.id}:Info", workInfo.outputData.toString())
+                            Log.d(TAG, "WorkManagerInfo:Success${work.id}:Info: " +  workInfo.outputData.toString())
                         } else {
-//                            Log.d("WorkManagerInfo:Failed${work.id}:State", workInfo.state.toString())
+                            Log.d(TAG,"WorkManagerInfo:Failed${work.id}:State: " + workInfo.state.toString())
                         }
                     })
         }
