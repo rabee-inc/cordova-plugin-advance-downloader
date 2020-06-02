@@ -1,15 +1,19 @@
 package jp.rabee
 
-import androidx.work.*
+import android.app.DownloadManager
+import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
 import com.google.gson.Gson
 import kotlinx.coroutines.runBlocking
 import org.apache.cordova.*
 import org.json.JSONException
 import org.json.*
+import rx.android.schedulers.AndroidSchedulers
+import rx.schedulers.Schedulers.io
 
 class AdvanceDownloader : CordovaPlugin() {
     lateinit var cContext: CallbackContext
-    private val downloadLifecycleOwner = DownloadLifecycleOwner()
     private val tasks = mutableMapOf<String, AdvanceDownloadTask>()
 
     // アプリ起動時に呼ばれる
@@ -71,7 +75,7 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        val output = Gson().toJson(tasks)
+        val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
         return true
@@ -79,7 +83,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
     private fun add(advanceDownloadTask: AdvanceDownloadTask, callbackContext: CallbackContext): Boolean {
         runBlocking {
-            advanceDownloadTask.status = AdvanceDownloadStatus.WAITING
             tasks[advanceDownloadTask.id] = advanceDownloadTask
         }
 
@@ -94,32 +97,45 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        runBlocking {
-            task.status = AdvanceDownloadStatus.PROCESSING
-        }
-
-        val output = Gson().toJson(tasks)
+        val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        val data = Data.Builder().apply {
-            putString("id", task.id)
-            putString("url", task.url)
-            putString("path", task.filePath)
-            putString("name", task.fileName)
-            putInt("size", task.size)
-            putDouble("progress", task.progress)
+        val uri = Uri.parse(task.url)
+        val request = DownloadManager.Request(uri).apply {
+            setTitle(task.fileName)
             task.headers.forEach { (k, v) ->
-                putString(k, v)
+                addRequestHeader(k, v)
             }
-        }.build()
-
-        cordova.activity.runOnUiThread {
-            downloadLifecycleOwner.start()
-            DownloadWorkerManager.startWork(downloadLifecycleOwner, data, {
-                //TODO: callback
-            })
+            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
+            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
         }
+        request.execute(cordova.activity.applicationContext)
+                .subscribeOn(io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ status ->
+                    when (status) {
+                        is RxDownloader.DownloadStatus.Complete -> {
+                            Toast.makeText(cordova.activity.applicationContext, "Successful Result: ${status.result.title}", Toast.LENGTH_SHORT).show()
+                        }
+                        is RxDownloader.DownloadStatus.Processing -> {
+                            Toast.makeText(cordova.activity.applicationContext, "Processing Result: ${status.result.title}", Toast.LENGTH_SHORT).show()
+                        }
+                        is RxDownloader.DownloadStatus.Paused -> {
+                            Toast.makeText(cordova.activity.applicationContext, "Paused Result: ${status.result.title}", Toast.LENGTH_SHORT).show()
+                        }
+                        is RxDownloader.DownloadStatus.Waiting -> {
+                            Toast.makeText(cordova.activity.applicationContext, "Waiting Result: ${status.result.title}", Toast.LENGTH_SHORT).show()
+                        }
+                        is RxDownloader.DownloadStatus.Failed -> {
+                            Toast.makeText(cordova.activity.applicationContext, "Failed Result: ${status.result.title}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }, { error ->
+                    error.stackTrace
+                }, {
+                    Toast.makeText(cordova.activity.applicationContext, "Complete downloads.", Toast.LENGTH_SHORT).show()
+                })
 
         return true
     }
@@ -127,10 +143,6 @@ class AdvanceDownloader : CordovaPlugin() {
     private fun pause(id: String, callbackContext: CallbackContext): Boolean {
         val task = tasks[id]
         task ?: return false
-
-        runBlocking {
-            task.status = AdvanceDownloadStatus.PAUSED
-        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -143,10 +155,6 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        runBlocking {
-            task.status = AdvanceDownloadStatus.PROCESSING
-        }
-
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
@@ -157,10 +165,6 @@ class AdvanceDownloader : CordovaPlugin() {
     private fun cancel(id: String, callbackContext: CallbackContext): Boolean {
         val task = tasks[id]
         task ?: return false
-
-        runBlocking {
-            task.status = AdvanceDownloadStatus.CANCELED
-        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)

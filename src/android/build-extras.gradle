@@ -14,6 +14,9 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+
+    compile 'io.reactivex:rxjava:1.2.1'
+    compile 'io.reactivex:rxandroid:1.2.1'
 }
 
 android {
