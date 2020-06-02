@@ -87,26 +87,6 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        //TODO: DEMO用なので以下は削除すること
-        val data = Data.Builder().apply {
-            putString("id", advanceDownloadTask.id)
-            putString("url", advanceDownloadTask.url)
-            putString("path", advanceDownloadTask.filePath)
-            putString("name", advanceDownloadTask.fileName)
-            putInt("size", advanceDownloadTask.size)
-            putDouble("progress", advanceDownloadTask.progress)
-            advanceDownloadTask.headers.forEach { (k, v) ->
-                putString(k, v)
-            }
-        }.build()
-
-        cordova.activity.runOnUiThread {
-            downloadLifecycleOwner.start()
-            DownloadWorkerManager.startWork(downloadLifecycleOwner, data, {
-                //TODO: callback
-            })
-        }
-
         return true
     }
 

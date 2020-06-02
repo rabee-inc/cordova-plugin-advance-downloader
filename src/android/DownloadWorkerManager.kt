@@ -40,10 +40,11 @@ class DownloadWorkerManager {
                     .getWorkInfoByIdLiveData(work.id)
                     .observe(lifecycleOwner, Observer { workInfo ->
                         if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
-                            callback()
+                            Log.d(TAG,"WorkManagerInfo:Success${work.id}:State: " + workInfo.state.toString())
                             Log.d(TAG, "WorkManagerInfo:Success${work.id}:Info: " +  workInfo.outputData.toString())
                         } else {
                             Log.d(TAG,"WorkManagerInfo:Failed${work.id}:State: " + workInfo.state.toString())
+                            Log.d(TAG, "WorkManagerInfo:Failed${work.id}:Info: " +  workInfo.outputData.toString())
                         }
                     })
         }
