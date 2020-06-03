@@ -1,7 +1,24 @@
 dependencies {
     compile 'com.android.support:multidex:1.0.3'
-    // some plugin to use, write here
+
+    implementation 'com.google.code.gson:gson:2.8.6'
+
+    def work_version = "2.3.4"
+    implementation "androidx.work:work-runtime:$work_version"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+
+    def lifecycle_version = "2.2.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
+
+    compile 'io.reactivex:rxjava:1.2.1'
+    compile 'io.reactivex:rxandroid:1.2.1'
 }
+
 android {
     dexOptions {
         jumboMode true
@@ -15,4 +32,13 @@ android {
             srcDirs += 'src/main/kotlin'
         }
     }
+    // TODO: アプリ側で jvmTarget = '1.8' が必要かも
+    // compileOptions {
+    //     sourceCompatibility JavaVersion.VERSION_1_8
+    //     targetCompatibility JavaVersion.VERSION_1_8
+
+    //     kotlinOptions {
+    //         jvmTarget = '1.8'
+    //     }
+    // }
 }
