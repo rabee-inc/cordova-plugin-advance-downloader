@@ -36,21 +36,63 @@ const AdvanceDownloader = {
     // 特定の id のダウンロードの中断
     stop: (params) => createAction('stop', params),
     // イベントの登録
-    on: (id, action, callback) => {
-        // action === start | pause | resume | stop | complete | fail;
+    on: (type, callback, id) => {
+        // type === progress | complete | failed;
+        let actionType = '';
+        switch(type) {
+            case 'progress': 
+                actionType = 'setOnProgress';
+                break;
+            case 'complete':
+                actionType = 'setOnComplete'
+                break;
+            case 'failed': 
+                actionType = 'setOnFailed'
+                break;
+            case 'changedStatus':
+                actionType = 'setOnChangedStatus'
+                break;
+            default: 
+                break;
+        }
+        if (!actionType) return console.warn('please set action type');
         exec(
             (data) => {
                 // 成功
-                callback(data)
+                if (typeof callback === 'function') {
+                    callback(data)
+                }
             },
-            () => {
+            (error) => {
                 // 失敗
                 // TODO: error handling
-            },'AdvanceDownloader', action, [id, action]
+                console.log(error, 'error')
+            },'AdvanceDownloader', actionType, [{id}]
         );
     },
     // イベントの削除
-    off: (params) => createAction('off', params),
+    off: (type, id) => {
+        // type === progress | complete | failed;
+        let actionType = '';
+        switch(type) {
+            case 'progress': 
+                actionType = 'removeOnProgress';
+                break;
+            case 'complete':
+                actionType = 'removeOnComplete'
+                break;
+            case 'failed': 
+                actionType = 'removeOnFailed'
+                break;
+            case 'changedStatus':
+                actionType = 'removeOnChangedStatus'
+                break;
+            default: 
+                break;
+        }
+        if (!actionType) return console.error('please set action type');
+        return createAction(actionType, {id});
+    }
 }
 
 
