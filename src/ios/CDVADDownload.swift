@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import UserNotifications
 
 enum CDVADStatus: String {
     case Waiting = "waiting"
@@ -163,6 +164,7 @@ extension CDVADDownload {
     
     private func run(task: inout CDVADTask) {
         let id = task.id
+        
         guard let freeSize = CDVADSystem.freeSize(), freeSize > task.size else {
             self.setFailed(id: id, message: self.msgCapacityLack, err: nil)
             return
@@ -280,9 +282,61 @@ extension CDVADDownload {
         task.onChangeStatus?(.Failed)
         task.onFailed?(message)
     }
-    
+
     private func generateFileURL(filePath: String, fileName: String) -> URL {
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return documentsURL.appendingPathComponent("\(filePath)/\(fileName)")
+        let fileURL = URL(fileURLWithPath: filePath.replacingOccurrences(of: "file://", with: ""))
+        return fileURL
     }
 }
+
+
+struct CDVADSystem {
+    static func freeSize() -> Int? {
+        guard
+            let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last,
+            let systemAttrs = try? FileManager.default.attributesOfFileSystem(forPath: path),
+            let freeSize = systemAttrs[FileAttributeKey.systemFreeSize] as? NSNumber else { return nil }
+        return freeSize.intValue
+    }
+}
+
+
+//
+//  CDVADNotification.swift
+//  downloads
+//
+//  Created by hirose.yuuki on 2020/05/25.
+//  Copyright © 2020 aikizoku. All rights reserved.
+
+
+
+struct CDVADNotification {
+    
+    static func register() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.badge, .sound, .alert], completionHandler: { (granted, err) in
+            guard err == nil else {
+                print(err as Any)
+                return
+            }
+            guard !granted else {
+                print("通知拒否")
+                return
+            }
+        })
+    }
+    
+    static func send(title: String, body: String, badge: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.badge = NSNumber(value: badge)
+        let request = UNNotificationRequest(
+            identifier: "CDVADNotification",
+            content: content,
+            trigger:UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    }
+}
+
+

@@ -40,6 +40,12 @@ struct CDVADParam {
     
     override func pluginInitialize() {
         CDVADNotification.register()
+        onChangedStatusCallbackIDs = [:]
+        onProgressCallbackIDs = [:]
+        onFailedCallbackIDs = [:]
+        onCompleteCallbackIDs = [:]
+        client = CDVADDownload()
+        
         client.clean()
     };
 
@@ -68,16 +74,19 @@ struct CDVADParam {
     // ダウンロードを追加
     @objc func add(_ command: CDVInvokedUrlCommand) {
         let param = CDVADParam(cmd: command)
+        var size: Int = 0;
         guard
             let id = param.id,
             let url = param.url,
             let headers = param.headers,
-            let size = param.size,
+//            let size = param.size,
             let filePath = param.filePath,
             let fileName = param.fileName else {
             let result = ["message": "invalid argument"]
+            let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+            cdvResult?.keepCallback = true
             commandDelegate.send(
-                CDVPluginResult(status: CDVCommandStatus_ERROR,  messageAs: result),
+                cdvResult,
                 callbackId: command.callbackId
             )
             return
@@ -88,11 +97,13 @@ struct CDVADParam {
             guard let self = self, let cIDs = self.onChangedStatusCallbackIDs[id] else { return }
             let result: [String:Any] = [
                 "id": id,
-                "status": status,
+                "status": status.rawValue,
             ]
+            let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+            cdvResult?.keepCallback = true
             for cID in cIDs {
                 self.commandDelegate.send(
-                    CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+                    cdvResult,
                     callbackId: cID
                 )
             }
@@ -103,9 +114,11 @@ struct CDVADParam {
                "id": id,
                "progress": progress,
             ]
+            let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+            cdvResult?.keepCallback = true
             for cID in cIDs {
                 self.commandDelegate.send(
-                    CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+                    cdvResult,
                     callbackId: cID
                 )
             }
@@ -116,9 +129,12 @@ struct CDVADParam {
                "id": id,
                "file_url": fileURL.absoluteString,
             ]
+            
+            let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+            cdvResult?.keepCallback = true
             for cID in cIDs {
                 self.commandDelegate.send(
-                    CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+                    cdvResult,
                     callbackId: cID
                 )
             }
@@ -130,9 +146,11 @@ struct CDVADParam {
                "id": id,
                "message": message,
             ]
+            let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+            cdvResult?.keepCallback = true
             for cID in cIDs {
                 self.commandDelegate.send(
-                    CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+                    cdvResult,
                     callbackId: cID
                 )
             }
@@ -250,8 +268,11 @@ struct CDVADParam {
         }
         
         let result = ["id": id]
+        let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+        cdvResult?.keepCallback = true
+        
         commandDelegate.send(
-            CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+            cdvResult,
             callbackId: command.callbackId
         )
     }
@@ -346,6 +367,7 @@ struct CDVADParam {
             )
             return
         }
+        
         if var ids = onCompleteCallbackIDs[id] {
             ids.append(command.callbackId)
             onCompleteCallbackIDs[id] = ids
