@@ -20,7 +20,7 @@ enum CDVADStatus: String {
 
 typealias CDVADTaskOnChangedStatus = (CDVADStatus) -> Void
 typealias CDVADTaskOnProgress = (Float) -> Void
-typealias CDVADTaskOnComplete = (URL) -> Void
+typealias CDVADTaskOnComplete = (URL, String) -> Void
 typealias CDVADTaskOnFailed = (String) -> Void
 
 struct CDVADTask {
@@ -61,7 +61,9 @@ class CDVADDownload {
     
     init() {
         tasks = Dictionary<String, CDVADTask>()
-        manager = Alamofire.Session(configuration: URLSessionConfiguration.default)
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30;
+        manager = Alamofire.Session(configuration: config)
         backgroundTaskID = stopBackgroundTaskID
     }
 }
@@ -204,7 +206,12 @@ extension CDVADDownload {
                 guard let self = self else { return }
                 if let err = response.error {
                     self.mutex.lock()
-                    self.setFailed(id: id, message: self.msgDownloadFailed, err: err)
+                    if (err.isExplicitlyCancelledError) {
+                        // TODO: handle cancel
+                    }
+                    else {
+                        self.setFailed(id: id, message: self.msgDownloadFailed, err: err)
+                    }
                     self.mutex.unlock()
                 } else {
                     self.mutex.lock()
@@ -265,11 +272,12 @@ extension CDVADDownload {
         tasks[id] = task
         
         task.onChangeStatus?(.Complete)
-        task.onComplete?(fileURL)
+        task.onComplete?(fileURL, task.fileName)
     }
     
     private func setFailed(id: String, message: String, err: Error?) {
         if let err = err {
+            print(err.localizedDescription)
             print(err)
         }
         

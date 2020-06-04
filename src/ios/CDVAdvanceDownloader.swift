@@ -56,13 +56,13 @@ struct CDVADParam {
         for task in tasks {
             results.append([
                 "id": task.id,
-                "url": task.url,
+                "url": task.url.absoluteString,
                 "headers": task.headers,
                 "size": task.size,
                 "file_path": task.filePath,
                 "file_name": task.fileName,
                 "progress": task.progress,
-                "status": task.status
+                "status": task.status.rawValue
             ])
         }
         commandDelegate.send(
@@ -74,17 +74,15 @@ struct CDVADParam {
     // ダウンロードを追加
     @objc func add(_ command: CDVInvokedUrlCommand) {
         let param = CDVADParam(cmd: command)
-        var size: Int = 0;
         guard
             let id = param.id,
             let url = param.url,
             let headers = param.headers,
-//            let size = param.size,
+            let size = param.size,
             let filePath = param.filePath,
             let fileName = param.fileName else {
             let result = ["message": "invalid argument"]
             let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
-            cdvResult?.keepCallback = true
             commandDelegate.send(
                 cdvResult,
                 callbackId: command.callbackId
@@ -123,7 +121,7 @@ struct CDVADParam {
                 )
             }
         }
-        task.onComplete = { [weak self] fileURL in
+        task.onComplete = { [weak self] fileURL, fileName in
             guard let self = self, let cIDs = self.onCompleteCallbackIDs[id] else { return }
             let result: [String:Any] = [
                "id": id,
@@ -131,14 +129,15 @@ struct CDVADParam {
             ]
             
             let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
-            cdvResult?.keepCallback = true
+            cdvResult?.keepCallback = true;
             for cID in cIDs {
                 self.commandDelegate.send(
                     cdvResult,
                     callbackId: cID
                 )
             }
-            CDVADNotification.send(title: "", body: "ダウンロードが完了しました", badge: 0)
+            
+            CDVADNotification.send(title: "", body: "\(fileName) のダウンロードが完了しました", badge: 0)
         }
         task.onFailed = { [weak self] message in
             guard let self = self, let cIDs = self.onFailedCallbackIDs[id] else { return }
@@ -180,8 +179,10 @@ struct CDVADParam {
         client.start(id: id)
         
         let result = ["id": id]
+        let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+        cdvResult?.keepCallback = true
         commandDelegate.send(
-            CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+            cdvResult,
             callbackId: command.callbackId
         )
     }
@@ -266,15 +267,6 @@ struct CDVADParam {
         } else {
             onChangedStatusCallbackIDs[id] = [command.callbackId]
         }
-        
-        let result = ["id": id]
-        let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
-        cdvResult?.keepCallback = true
-        
-        commandDelegate.send(
-            cdvResult,
-            callbackId: command.callbackId
-        )
     }
     
     // ステータス変更のコールバックを解除
@@ -323,8 +315,10 @@ struct CDVADParam {
         }
         
         let result = ["id": id]
+        let cdvResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result)
+        cdvResult?.keepCallback = true
         commandDelegate.send(
-            CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
+            cdvResult,
             callbackId: command.callbackId
         )
     }
@@ -374,12 +368,6 @@ struct CDVADParam {
         } else {
             onCompleteCallbackIDs[id] = [command.callbackId]
         }
-        
-        let result = ["id": id]
-        commandDelegate.send(
-            CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
-            callbackId: command.callbackId
-        )
     }
     
     // ダウンロード成功のコールバックを解除
@@ -426,12 +414,6 @@ struct CDVADParam {
         } else {
            onFailedCallbackIDs[id] = [command.callbackId]
         }
-        
-        let result = ["id": id]
-        commandDelegate.send(
-            CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result),
-            callbackId: command.callbackId
-        )
     }
     
     // ダウンロード失敗のコールバックを解除
