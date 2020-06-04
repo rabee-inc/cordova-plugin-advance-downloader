@@ -44,7 +44,7 @@ function onDeviceReady() {
 function listAction() {
     const addRequestParams = {}
 
-    window.AdvanceDownloader.queues(addRequestParams).then((v) => {
+    window.AdvanceDownloader.list(addRequestParams).then((v) => {
         window.alert(v)
     });
 }
@@ -102,7 +102,7 @@ function getAction() {
         id: 'absfldsfsfjlsdfjs'
     }
 
-    window.AdvanceDownloader.get(addRequestParams).then((v) => {
+    window.AdvanceDownloader.getTasks(addRequestParams).then((v) => {
         window.alert(v)
     });
 }

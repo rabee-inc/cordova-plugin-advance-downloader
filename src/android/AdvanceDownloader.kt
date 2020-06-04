@@ -35,12 +35,12 @@ class AdvanceDownloader : CordovaPlugin() {
         var result = true
         val value = data.getJSONObject(0)
         when(action) {
-            "queues" -> {
-                result = this.queues(cContext)
+            "list" -> {
+                result = this.list(cContext)
             }
-            "get" -> {
+            "getTasks" -> {
                 val id = value.getString("id")
-                result = this.get(id, cContext)
+                result = this.getTasks(id, cContext)
             }
             "add" -> {
                 val task = Gson().fromJson(value.toString(), AdvanceDownloadTask::class.java)
@@ -94,7 +94,7 @@ class AdvanceDownloader : CordovaPlugin() {
         return result
     }
 
-    private fun queues(callbackContext: CallbackContext): Boolean {
+    private fun list(callbackContext: CallbackContext): Boolean {
         val tasks = getTasks()
         val output = Gson().toJson(tasks)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -102,7 +102,7 @@ class AdvanceDownloader : CordovaPlugin() {
         return true
     }
 
-    private fun get(id: String, callbackContext: CallbackContext): Boolean {
+    private fun getTasks(id: String, callbackContext: CallbackContext): Boolean {
         val tasks = getTasks()
         val task = tasks[id]
         task ?: return false
@@ -134,23 +134,14 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-//        val uri = Uri.parse(task.url)
-//        val request = DownloadManager.Request(uri).apply {
-//            setTitle(task.fileName)
-//            task.headers.forEach { (k, v) ->
-//                addRequestHeader(k, v)
-//            }
-//            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-//            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
-//        }
-        val uri = Uri.parse("https://mazwai.com/videvo_files/video/free/2017-11/small_watermarked/journey_through_the_crimean_caves_eugene_bryohin_preview.mp4")
+        val uri = Uri.parse(task.url)
         val request = DownloadManager.Request(uri).apply {
-            setTitle("journey_through_the_crimean_caves_eugene_bryohin_preview")
+            setTitle(task.fileName)
             task.headers.forEach { (k, v) ->
                 addRequestHeader(k, v)
             }
             setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, "journey_through_the_crimean_caves_eugene_bryohin_preview")
+            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
         }
 
         request.execute(cordova.activity.applicationContext, task)
@@ -188,11 +179,14 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        //TODO: pauseする
-
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
+
+        if (task.downloadId > 0) {
+            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            manager.remove(task.downloadId)
+        }
 
         return true
     }
@@ -206,6 +200,43 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
+        val uri = Uri.parse(task.url)
+        val request = DownloadManager.Request(uri).apply {
+            setTitle(task.fileName)
+            task.headers.forEach { (k, v) ->
+                addRequestHeader(k, v)
+            }
+            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
+            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
+        }
+
+        request.execute(cordova.activity.applicationContext, task)
+                .subscribeOn(io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ status ->
+                    when (status) {
+                        is RxDownloader.DownloadStatus.Complete -> {
+                            Log.d(TAG, "Successful Result: ${status.result.title}")
+                        }
+                        is RxDownloader.DownloadStatus.Processing -> {
+                            Log.d(TAG, "Processing Progress: ${status.progress}")
+                        }
+                        is RxDownloader.DownloadStatus.Paused -> {
+                            Log.d(TAG, "Paused Reason: ${status.reason}")
+                        }
+                        is RxDownloader.DownloadStatus.Waiting -> {
+                            Log.d(TAG, "Waiting Result: ${status.result.title}")
+                        }
+                        is RxDownloader.DownloadStatus.Failed -> {
+                            Log.d(TAG, "Failed Reason: ${status.reason}")
+                        }
+                    }
+                }, { error ->
+                    error.stackTrace
+                }, {
+                    Log.d(TAG, "Complete downloads.")
+                })
+
         return true
     }
 
@@ -217,6 +248,11 @@ class AdvanceDownloader : CordovaPlugin() {
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
+
+        if (task.downloadId > 0) {
+            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            manager.remove(task.downloadId)
+        }
 
         return true
     }

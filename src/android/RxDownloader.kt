@@ -79,17 +79,19 @@ class RxDownloader(
                 }
             }, AsyncEmitter.BackpressureMode.BUFFER)
 
+    fun removeRequest(downloadId: Long) {
+        manager.remove(downloadId)
+    }
 
     private fun resolveDownloadStatus(task: AdvanceDownloadTask, downloadId: Long, emitter: AsyncEmitter<in DownloadStatus>) {
         val query = DownloadManager.Query().apply {
             setFilterById(downloadId)
         }
 
-        val tasks = Gson().fromJson<MutableMap<String, AdvanceDownloadTask>>(mPrefs.getString(RxDownloader.KEY, "{}"), typeToken.type)
+        val tasks = Gson().fromJson<MutableMap<String, AdvanceDownloadTask>>(mPrefs.getString(KEY, "{}"), typeToken.type)
         task.downloadId = downloadId
         tasks[task.id] = task
-
-        mPrefs.edit().putString(RxDownloader.KEY, Gson().toJson(tasks)).apply()
+        mPrefs.edit().putString(KEY, Gson().toJson(tasks)).apply()
 
         val cursor = manager.query(query)
         if (cursor.moveToFirst()) {
