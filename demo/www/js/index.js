@@ -20,13 +20,36 @@
 // Wait for the deviceready event before using any of Cordova's device APIs.
 // See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
 document.addEventListener('deviceready', onDeviceReady, false);
-function onDeviceReady() {   
+function onDeviceReady() {
     // button
-    const button1 = document.querySelector('.button1') 
-    button1.addEventListener('click', hello);
+    const button1 = document.querySelector('.button1')
+    button1.addEventListener('click', listAction);
+
+    const button2 = document.querySelector('.button2')
+    button2.addEventListener('click', addAction);
+
+    const button3 = document.querySelector('.button3')
+    button3.addEventListener('click', startAction);
+
+    const button4 = document.querySelector('.button4')
+    button4.addEventListener('click', pauseAction);
+
+    const button5 = document.querySelector('.button5')
+    button5.addEventListener('click', stopAction);
+
+    const button6 = document.querySelector('.button6')
+    button6.addEventListener('click', getAction);
 }
 
-function hello() {
+function listAction() {
+    const addRequestParams = {}
+
+    window.AdvanceDownloader.queues(addRequestParams).then((v) => {
+        window.alert(v)
+    });
+}
+
+function addAction() {
     const addRequestParams = {
         id: 'absfldsfsfjlsdfjs',
         url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
@@ -44,6 +67,43 @@ function hello() {
     });
 }
 
+function startAction() {
+    const addRequestParams = {
+        id: 'absfldsfsfjlsdfjs'
+    }
 
-function add() {  
+    window.AdvanceDownloader.start(addRequestParams).then((v) => {
+        window.alert(v)
+    });
 }
+
+function pauseAction() {
+    const addRequestParams = {
+        id: 'absfldsfsfjlsdfjs'
+    }
+
+    window.AdvanceDownloader.resume(addRequestParams).then((v) => {
+        window.alert(v)
+    });
+}
+
+function stopAction() {
+    const addRequestParams = {
+        id: 'absfldsfsfjlsdfjs'
+    }
+
+    window.AdvanceDownloader.stop(addRequestParams).then((v) => {
+        window.alert(v)
+    });
+}
+
+function getAction() {
+    const addRequestParams = {
+        id: 'absfldsfsfjlsdfjs'
+    }
+
+    window.AdvanceDownloader.get(addRequestParams).then((v) => {
+        window.alert(v)
+    });
+}
+

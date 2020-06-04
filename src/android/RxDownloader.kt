@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import rx.AsyncEmitter
 import rx.Observable
 import java.util.*
@@ -17,7 +19,11 @@ class RxDownloader(
 
     companion object {
         const val TAG = "RxDownloader"
+        const val KEY = "AdvanceDownloadTasks"
     }
+
+    private val mPrefs = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
+    private val typeToken = object : TypeToken<MutableMap<String, AdvanceDownloadTask>>() {}
 
     private val manager: DownloadManager =
             context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -31,7 +37,7 @@ class RxDownloader(
         requests.add(request)
     }
 
-    fun execute(): Observable<DownloadStatus> =
+    fun execute(task: AdvanceDownloadTask): Observable<DownloadStatus> =
             if (requests.isEmpty()) Observable.empty()
             else Observable.fromEmitter({ emitter ->
                 receiver = object : BroadcastReceiver() {
@@ -42,10 +48,13 @@ class RxDownloader(
                             if (!queuedRequests.contains(downloadId)) {
                                 return
                             }
-                            resolveDownloadStatus(downloadId, emitter)
+                            resolveDownloadStatus(task, downloadId, emitter)
                             queuedRequests.remove(downloadId)
                             if (queuedRequests.isEmpty()) {
                                 emitter.onCompleted()
+                                context ?: return
+
+                                mPrefs.edit().clear().apply()
                             }
                         }
                     }
@@ -66,14 +75,22 @@ class RxDownloader(
                     receiver?.let {
                         context.unregisterReceiver(it)
                     }
+                    mPrefs.edit().clear().apply()
                 }
             }, AsyncEmitter.BackpressureMode.BUFFER)
 
 
-    private fun resolveDownloadStatus(downloadId: Long, emitter: AsyncEmitter<in DownloadStatus>) {
+    private fun resolveDownloadStatus(task: AdvanceDownloadTask, downloadId: Long, emitter: AsyncEmitter<in DownloadStatus>) {
         val query = DownloadManager.Query().apply {
             setFilterById(downloadId)
         }
+
+        val tasks = Gson().fromJson<MutableMap<String, AdvanceDownloadTask>>(mPrefs.getString(RxDownloader.KEY, "{}"), typeToken.type)
+        task.downloadId = downloadId
+        tasks[task.id] = task
+
+        mPrefs.edit().putString(RxDownloader.KEY, Gson().toJson(tasks)).apply()
+
         val cursor = manager.query(query)
         if (cursor.moveToFirst()) {
             val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
@@ -141,28 +158,16 @@ class RxDownloader(
                     title = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_TITLE))
             )
 
-    sealed class DownloadStatus(val result: RequestResult) {
+    sealed class DownloadStatus(val result: RequestResult, val progress: Long = 0, val reason: String = "") {
         class Waiting(result: RequestResult) : DownloadStatus(result)
-        class Processing(result: RequestResult, val progress: Long) : DownloadStatus(result)
-        class Paused(result: RequestResult, val reason: String) : DownloadStatus(result)
-        class Failed(result: RequestResult, val reason: String) : DownloadStatus(result)
+        class Processing(result: RequestResult, progress: Long) : DownloadStatus(result, progress)
+        class Paused(result: RequestResult, reason: String) : DownloadStatus(result, reason = reason)
+        class Failed(result: RequestResult, reason: String) : DownloadStatus(result, reason = reason)
         class Complete(result: RequestResult) : DownloadStatus(result)
     }
 
     class DownloadFailedException(message: String, val request: DownloadManager.Request?) : Throwable(message)
 }
 
-fun Array<DownloadManager.Request>.execute(context: Context): Observable<RxDownloader.DownloadStatus> =
-        RxDownloader(
-                context,
-                ArrayList<DownloadManager.Request>().apply { addAll(this@execute) }
-        ).execute()
-
-fun Collection<DownloadManager.Request>.execute(context: Context): Observable<RxDownloader.DownloadStatus> =
-        RxDownloader(
-                context,
-                ArrayList<DownloadManager.Request>().apply { addAll(this@execute) }
-        ).execute()
-
-fun DownloadManager.Request.execute(context: Context): Observable<RxDownloader.DownloadStatus> =
-        RxDownloader(context).enqueue(this).execute()
+fun DownloadManager.Request.execute(context: Context, task: AdvanceDownloadTask): Observable<RxDownloader.DownloadStatus> =
+        RxDownloader(context).enqueue(this).execute(task)
