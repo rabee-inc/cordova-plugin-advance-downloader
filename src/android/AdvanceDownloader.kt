@@ -22,7 +22,7 @@ class AdvanceDownloader : CordovaPlugin() {
 
     // アプリ起動時に呼ばれる
     override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
-        mPrefs = cordova.activity.applicationContext.getSharedPreferences(RxDownloader.KEY, Context.MODE_PRIVATE)
+        mPrefs = cordova.activity.applicationContext.getSharedPreferences(TAG, Context.MODE_PRIVATE)
 
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
     }
@@ -116,7 +116,7 @@ class AdvanceDownloader : CordovaPlugin() {
     private fun add(advanceDownloadTask: AdvanceDownloadTask, callbackContext: CallbackContext): Boolean {
         val tasks = getTasks()
         tasks[advanceDownloadTask.id] = advanceDownloadTask
-        mPrefs.edit().putString(RxDownloader.KEY, Gson().toJson(tasks)).apply()
+        mPrefs.edit().putString(TAG, Gson().toJson(tasks)).apply()
 
         val output = Gson().toJson(advanceDownloadTask)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -134,42 +134,42 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        val uri = Uri.parse(task.url)
-        val request = DownloadManager.Request(uri).apply {
-            setTitle(task.fileName)
-            task.headers.forEach { (k, v) ->
-                addRequestHeader(k, v)
-            }
-            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
-        }
-
-        request.execute(cordova.activity.applicationContext, task)
-                .subscribeOn(io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ status ->
-                    when (status) {
-                        is RxDownloader.DownloadStatus.Complete -> {
-                            Log.d(TAG, "Successful Result: ${status.result.title}")
-                        }
-                        is RxDownloader.DownloadStatus.Processing -> {
-                            Log.d(TAG, "Processing Progress: ${status.progress}")
-                        }
-                        is RxDownloader.DownloadStatus.Paused -> {
-                            Log.d(TAG, "Paused Reason: ${status.reason}")
-                        }
-                        is RxDownloader.DownloadStatus.Waiting -> {
-                            Log.d(TAG, "Waiting Result: ${status.result.title}")
-                        }
-                        is RxDownloader.DownloadStatus.Failed -> {
-                            Log.d(TAG, "Failed Reason: ${status.reason}")
-                        }
-                    }
-                }, { error ->
-                    error.stackTrace
-                }, {
-                    Log.d(TAG, "Complete downloads.")
-                })
+//        val uri = Uri.parse(task.url)
+//        val request = DownloadManager.Request(uri).apply {
+//            setTitle(task.fileName)
+//            task.headers.forEach { (k, v) ->
+//                addRequestHeader(k, v)
+//            }
+//            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
+//            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
+//        }
+//
+//        request.execute(cordova.activity.applicationContext, task)
+//                .subscribeOn(io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe({ status ->
+//                    when (status) {
+//                        is RxDownloader.DownloadStatus.Complete -> {
+//                            Log.d(TAG, "Successful Result: ${status.result.title}")
+//                        }
+//                        is RxDownloader.DownloadStatus.Processing -> {
+//                            Log.d(TAG, "Processing Progress: ${status.progress}")
+//                        }
+//                        is RxDownloader.DownloadStatus.Paused -> {
+//                            Log.d(TAG, "Paused Reason: ${status.reason}")
+//                        }
+//                        is RxDownloader.DownloadStatus.Waiting -> {
+//                            Log.d(TAG, "Waiting Result: ${status.result.title}")
+//                        }
+//                        is RxDownloader.DownloadStatus.Failed -> {
+//                            Log.d(TAG, "Failed Reason: ${status.reason}")
+//                        }
+//                    }
+//                }, { error ->
+//                    error.stackTrace
+//                }, {
+//                    Log.d(TAG, "Complete downloads.")
+//                })
 
         return true
     }
@@ -183,11 +183,6 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        if (task.downloadId > 0) {
-            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            manager.remove(task.downloadId)
-        }
-
         return true
     }
 
@@ -200,43 +195,6 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        val uri = Uri.parse(task.url)
-        val request = DownloadManager.Request(uri).apply {
-            setTitle(task.fileName)
-            task.headers.forEach { (k, v) ->
-                addRequestHeader(k, v)
-            }
-            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
-        }
-
-        request.execute(cordova.activity.applicationContext, task)
-                .subscribeOn(io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ status ->
-                    when (status) {
-                        is RxDownloader.DownloadStatus.Complete -> {
-                            Log.d(TAG, "Successful Result: ${status.result.title}")
-                        }
-                        is RxDownloader.DownloadStatus.Processing -> {
-                            Log.d(TAG, "Processing Progress: ${status.progress}")
-                        }
-                        is RxDownloader.DownloadStatus.Paused -> {
-                            Log.d(TAG, "Paused Reason: ${status.reason}")
-                        }
-                        is RxDownloader.DownloadStatus.Waiting -> {
-                            Log.d(TAG, "Waiting Result: ${status.result.title}")
-                        }
-                        is RxDownloader.DownloadStatus.Failed -> {
-                            Log.d(TAG, "Failed Reason: ${status.reason}")
-                        }
-                    }
-                }, { error ->
-                    error.stackTrace
-                }, {
-                    Log.d(TAG, "Complete downloads.")
-                })
-
         return true
     }
 
@@ -248,11 +206,6 @@ class AdvanceDownloader : CordovaPlugin() {
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
-
-        if (task.downloadId > 0) {
-            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            manager.remove(task.downloadId)
-        }
 
         return true
     }
@@ -330,10 +283,10 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     private fun getTasks(): MutableMap<String, AdvanceDownloadTask> {
-        return Gson().fromJson(mPrefs.getString(RxDownloader.KEY, "{}"), typeToken.type)
+        return Gson().fromJson(mPrefs.getString(TAG, "{}"), typeToken.type)
     }
 
     companion object {
-        protected val TAG = "AdvanceDownloader"
+        val TAG = "AdvanceDownloader"
     }
 }
