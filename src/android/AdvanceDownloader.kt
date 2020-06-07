@@ -4,12 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import io.reactivex.Flowable.fromIterable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
 import org.apache.cordova.*
 import org.json.JSONException
 import org.json.*
 import zlc.season.rxdownload4.manager.*
 import zlc.season.rxdownload4.notification.SimpleNotificationCreator
-
+import zlc.season.rxdownload4.recorder.RoomRecorder
+import zlc.season.rxdownload4.recorder.RxDownloadRecorder
 
 class AdvanceDownloader : CordovaPlugin() {
     lateinit var cContext: CallbackContext
@@ -145,46 +149,61 @@ class AdvanceDownloader : CordovaPlugin() {
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
+        result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        task.manager = task.url.manager(header = task.headers, notificationCreator = SimpleNotificationCreator())
-        task.tag = task.manager.subscribe { status ->
-            when(status) {
-                is Normal -> {
-                    //do nothing.
+        //MEMO: 実行順番は問わない
+        val urls = tasks.map { it.value.url }
+        RxDownloadRecorder.getTaskList(*urls.toTypedArray())
+                .flatMapPublisher { fromIterable(it) }
+                .doOnNext {
+                    it.task.manager(
+                            header = task.headers,
+                            notificationCreator = SimpleNotificationCreator(),
+                            recorder = RoomRecorder()
+                    ).start()
                 }
-                is Started,
-                is Paused -> {
-                    if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                        val r = PluginResult(PluginResult.Status.OK, status.toString())
-                        callbackContext.sendPluginResult(r)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnComplete {
+                    // do nothing.
+                }
+                .subscribeBy { task ->
+                    when(task.status) {
+                        is Normal -> {
+                            //do nothing.
+                        }
+                        is Started,
+                        is Paused -> {
+                            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Downloading -> {
+                            if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.progress.percentStr())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Completed -> {
+                            if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.task.taskName)
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Failed -> {
+                            if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, (task.status as Failed).throwable.printStackTrace().toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Deleted -> {}
                     }
                 }
-                is Downloading -> {
-                    if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
-                        val r = PluginResult(PluginResult.Status.OK, status.progress.percentStr())
-                        callbackContext.sendPluginResult(r)
-                    }
-                }
-                is Completed -> {
-                    if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
-                        val r = PluginResult(PluginResult.Status.OK, task.filePath + "/" + task.fileName)
-                        callbackContext.sendPluginResult(r)
-                    }
-                }
-                is Failed -> {
-                    if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
-                        val r = PluginResult(PluginResult.Status.OK, status.throwable.printStackTrace().toString())
-                        callbackContext.sendPluginResult(r)
-                    }
-                }
-                is Deleted -> {}
-            }
-        }
-        task.manager.start()
-
-        tasks[task.id] = task
-        editTasks(tasks)
 
         return true
     }
@@ -198,7 +217,7 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        task.manager.stop()
+        RxDownloadRecorder.stopAll()
 
         return true
     }
@@ -210,9 +229,60 @@ class AdvanceDownloader : CordovaPlugin() {
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
+        result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        task.manager.start()
+        val urls = tasks.map { it.value.url }
+        RxDownloadRecorder.getTaskList(*urls.toTypedArray())
+                .flatMapPublisher { fromIterable(it) }
+                .doOnNext {
+                    it.task.manager(
+                            header = task.headers,
+                            notificationCreator = SimpleNotificationCreator(),
+                            recorder = RoomRecorder()
+                    ).start()
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnComplete {
+                    // do nothing.
+                }
+                .subscribeBy { task ->
+                    when(task.status) {
+                        is Normal -> {
+                            //do nothing.
+                        }
+                        is Started,
+                        is Paused -> {
+                            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Downloading -> {
+                            if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.progress.percentStr())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Completed -> {
+                            if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.task.taskName)
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Failed -> {
+                            if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, (task.status as Failed).throwable.printStackTrace().toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
+                        }
+                        is Deleted -> {}
+                    }
+                }
 
         return true
     }
@@ -226,8 +296,7 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        task.manager.delete()
-        task.manager.dispose(task.tag)
+        RxDownloadRecorder.deleteAll()
 
         tasks.remove(task.id)
         editTasks(tasks)

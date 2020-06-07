@@ -9,7 +9,5 @@ data class AdvanceDownloadTask(
         @SerializedName("size") val size: Int,
         @SerializedName("path") val filePath: String,
         @SerializedName("name") val fileName: String,
-        @SerializedName("headers") val headers: MutableMap<String, String>,
-        @SerializedName("manager") var manager: TaskManager,
-        @SerializedName("tag") var tag: Any
+        @SerializedName("headers") val headers: MutableMap<String, String>
 )
