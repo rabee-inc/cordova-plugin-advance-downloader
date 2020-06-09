@@ -17,8 +17,9 @@
     ],
     "author": "Apache Cordova Team",
     "license": "Apache-2.0",
-    "dependencies": {
-        "cordova-ios": "^5.1.0-nightly.2019.11.10.9964c74b",
+    "devDependencies": {
+        "cordova-ios": "^6.0.0-nightly.2020.5.20.b9265b81",
+        "cordova-plugin-add-swift-support": "^2.0.2",
         "cordova-plugin-advance-downloader": "file:.."
     },
     "cordova": {

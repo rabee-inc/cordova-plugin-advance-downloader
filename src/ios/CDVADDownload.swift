@@ -23,7 +23,7 @@ typealias CDVADTaskOnProgress = (Float) -> Void
 typealias CDVADTaskOnComplete = (URL, String) -> Void
 typealias CDVADTaskOnFailed = (String) -> Void
 
-struct CDVADTask {
+class CDVADTask {
     var id: String
     var url: URL
     var headers: [String: String]
@@ -50,10 +50,8 @@ struct CDVADTask {
 
 class CDVADDownload {
     private var tasks: Dictionary<String, CDVADTask>
-    private var manager: Session
-    private var backgroundTaskID: UIBackgroundTaskIdentifier
+    private var manager: SessionManager
     
-    private let stopBackgroundTaskID = UIBackgroundTaskIdentifier(0)
     private let mutex = NSLock()
     
     private let msgDownloadFailed = "データのダウンロードに失敗しました"
@@ -61,10 +59,9 @@ class CDVADDownload {
     
     init() {
         tasks = Dictionary<String, CDVADTask>()
-        let config = URLSessionConfiguration.default
+        let config = URLSessionConfiguration.background(withIdentifier: "jp.rabee.cdvad.downloader")
         config.timeoutIntervalForRequest = 30;
-        manager = Alamofire.Session(configuration: config)
-        backgroundTaskID = stopBackgroundTaskID
+        manager = Alamofire.SessionManager(configuration: config)
     }
 }
 
@@ -118,13 +115,12 @@ extension CDVADDownload {
     
     func pause(id: String) {
         mutex.lock()
-        guard var task = tasks[id], let request = task.request, task.status == .Processing else {
+        guard let task = tasks[id], let request = task.request, task.status == .Processing else {
             mutex.unlock()
             return
         }
         request.suspend()
         task.status = .Paused
-        tasks[id] = task
         mutex.unlock()
         
         task.onChangeStatus?(.Paused)
@@ -132,13 +128,12 @@ extension CDVADDownload {
     
     func resume(id: String) {
         mutex.lock()
-        guard var task = tasks[id], let request = task.request, task.status == .Paused else {
+        guard let task = tasks[id], let request = task.request, task.status == .Paused else {
             mutex.unlock()
             return
         }
         request.resume()
         task.status = .Processing
-        tasks[id] = task
         mutex.unlock()
         
         task.onChangeStatus?(.Processing)
@@ -146,7 +141,7 @@ extension CDVADDownload {
     
     func cancel(id: String) {
         mutex.lock()
-        guard var task = tasks[id], let request = task.request,
+        guard let task = tasks[id], let request = task.request,
             task.status == .Waiting || task.status == .Processing || task.status == .Paused else {
             mutex.unlock()
             return
@@ -180,13 +175,8 @@ extension CDVADDownload {
         downloadingFileURLs.append(fileURL.absoluteString)
         CDVADUserDefaults.downloadingFileURLs = downloadingFileURLs
         
-        // バックグラウンドタスク開始
-        if backgroundTaskID == stopBackgroundTaskID {
-            backgroundTaskID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
-        }
-        
         // 保存先の指定
-        let destination: DownloadRequest.Destination = { _, _ in
+        let destination: DownloadRequest.DownloadFileDestination = { _, _ in
             return (fileURL, [.removePreviousFile, .createIntermediateDirectories])
         }
         
@@ -206,12 +196,7 @@ extension CDVADDownload {
                 guard let self = self else { return }
                 if let err = response.error {
                     self.mutex.lock()
-                    if (err.isExplicitlyCancelledError) {
-                        // TODO: handle cancel
-                    }
-                    else {
-                        self.setFailed(id: id, message: self.msgDownloadFailed, err: err)
-                    }
+                    self.setFailed(id: id, message: self.msgDownloadFailed, err: err)
                     self.mutex.unlock()
                 } else {
                     self.mutex.lock()
@@ -223,21 +208,6 @@ extension CDVADDownload {
                 // 未ダウンロードのタスクがあったら再帰処理
                 if var waitTask = self.tasks.filter({ $0.value.status == .Waiting }).map({ $0.value }).first {
                     self.run(task: &waitTask)
-                } else {
-                    // バックグラウンドタスク終了
-                    self.mutex.lock()
-                    if !self.tasks.contains(where:{
-                        switch $0.value.status {
-                        case .Waiting, .Canceled, .Complete, .Failed:
-                            return false
-                        case .Processing, .Paused:
-                            return true
-                        }
-                    }) {
-                        UIApplication.shared.endBackgroundTask(self.backgroundTaskID)
-                        self.backgroundTaskID = self.stopBackgroundTaskID
-                    }
-                    self.mutex.unlock()
                 }
             })
         task.request = request
@@ -265,11 +235,10 @@ extension CDVADDownload {
     }
     
     private func setComplete(id: String, fileURL: URL) {
-        guard var task = tasks[id] else {
+        guard let task = tasks[id] else {
             return
         }
         task.status = .Complete
-        tasks[id] = task
         
         task.onChangeStatus?(.Complete)
         task.onComplete?(fileURL, task.fileName)
@@ -281,11 +250,10 @@ extension CDVADDownload {
             print(err)
         }
         
-        guard var task = tasks[id] else {
+        guard let task = tasks[id] else {
             return
         }
         task.status = .Failed
-        tasks[id] = task
         
         task.onChangeStatus?(.Failed)
         task.onFailed?(message)
@@ -297,7 +265,6 @@ extension CDVADDownload {
     }
 }
 
-
 struct CDVADSystem {
     static func freeSize() -> Int? {
         guard
@@ -307,16 +274,6 @@ struct CDVADSystem {
         return freeSize.intValue
     }
 }
-
-
-//
-//  CDVADNotification.swift
-//  downloads
-//
-//  Created by hirose.yuuki on 2020/05/25.
-//  Copyright © 2020 aikizoku. All rights reserved.
-
-
 
 struct CDVADNotification {
     
@@ -346,5 +303,3 @@ struct CDVADNotification {
         UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 }
-
-

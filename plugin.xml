@@ -60,7 +60,7 @@
         <source url="https://github.com/CocoaPods/Specs.git"/>
       </config>
       <pods use-frameworks="true">
-        <pod name="Alamofire" spec="~> 5.2" />
+        <pod name="Alamofire" spec="~> 4.9.1" />
       </pods>
     </podspec>
 
