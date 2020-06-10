@@ -1,28 +1,37 @@
 package jp.rabee
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.net.Uri
-import android.os.Environment
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import io.reactivex.Flowable.fromIterable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
 import org.apache.cordova.*
 import org.json.JSONException
 import org.json.*
-import rx.android.schedulers.AndroidSchedulers
-import rx.schedulers.Schedulers.io
+import zlc.season.rxdownload4.manager.*
+import zlc.season.rxdownload4.notification.SimpleNotificationCreator
+import zlc.season.rxdownload4.recorder.RoomRecorder
+import zlc.season.rxdownload4.recorder.RxDownloadRecorder
 
 class AdvanceDownloader : CordovaPlugin() {
     lateinit var cContext: CallbackContext
-    lateinit var mPrefs: SharedPreferences
+    lateinit var prefsTasks: SharedPreferences
+    lateinit var prefsChangeStatusCallback: SharedPreferences
+    lateinit var prefsProgressCallback: SharedPreferences
+    lateinit var prefsCompleteCallback: SharedPreferences
+    lateinit var prefsFailedCallback: SharedPreferences
 
     private val typeToken = object : TypeToken<MutableMap<String, AdvanceDownloadTask>>() {}
 
     // アプリ起動時に呼ばれる
     override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
-        mPrefs = cordova.activity.applicationContext.getSharedPreferences(RxDownloader.KEY, Context.MODE_PRIVATE)
+        prefsTasks = cordova.activity.applicationContext.getSharedPreferences(TASK_KEY, Context.MODE_PRIVATE)
+        prefsChangeStatusCallback = cordova.activity.applicationContext.getSharedPreferences(STATUS_KEY, Context.MODE_PRIVATE)
+        prefsProgressCallback = cordova.activity.applicationContext.getSharedPreferences(PROGRESS_KEY, Context.MODE_PRIVATE)
+        prefsCompleteCallback = cordova.activity.applicationContext.getSharedPreferences(COMPLETE_KEY, Context.MODE_PRIVATE)
+        prefsFailedCallback = cordova.activity.applicationContext.getSharedPreferences(FAILED_KEY, Context.MODE_PRIVATE)
 
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
     }
@@ -78,6 +87,14 @@ class AdvanceDownloader : CordovaPlugin() {
                 val id = value.getString("id")
                 result = this.removeOnProgress(id, cContext)
             }
+            "setOnComplete" -> {
+                val id = value.getString("id")
+                result = this.setOnComplete(id, cContext)
+            }
+            "removeOnComplete" -> {
+                val id = value.getString("id")
+                result = this.removeOnComplete(id, cContext)
+            }
             "setOnFailed" -> {
                 val id = value.getString("id")
                 result = this.setOnFailed(id, cContext)
@@ -116,7 +133,7 @@ class AdvanceDownloader : CordovaPlugin() {
     private fun add(advanceDownloadTask: AdvanceDownloadTask, callbackContext: CallbackContext): Boolean {
         val tasks = getTasks()
         tasks[advanceDownloadTask.id] = advanceDownloadTask
-        mPrefs.edit().putString(RxDownloader.KEY, Gson().toJson(tasks)).apply()
+        editTasks(tasks)
 
         val output = Gson().toJson(advanceDownloadTask)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -132,44 +149,61 @@ class AdvanceDownloader : CordovaPlugin() {
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
+        result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        val uri = Uri.parse(task.url)
-        val request = DownloadManager.Request(uri).apply {
-            setTitle(task.fileName)
-            task.headers.forEach { (k, v) ->
-                addRequestHeader(k, v)
-            }
-            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
-        }
-
-        request.execute(cordova.activity.applicationContext, task)
-                .subscribeOn(io())
+        //MEMO: 実行順番は問わない
+        val urls = tasks.map { it.value.url }
+        RxDownloadRecorder.getTaskList(*urls.toTypedArray())
+                .flatMapPublisher { fromIterable(it) }
+                .doOnNext {
+                    it.task.manager(
+                            header = task.headers,
+                            notificationCreator = SimpleNotificationCreator(),
+                            recorder = RoomRecorder()
+                    ).start()
+                }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ status ->
-                    when (status) {
-                        is RxDownloader.DownloadStatus.Complete -> {
-                            Log.d(TAG, "Successful Result: ${status.result.title}")
+                .doOnComplete {
+                    // do nothing.
+                }
+                .subscribeBy { task ->
+                    when(task.status) {
+                        is Normal -> {
+                            //do nothing.
                         }
-                        is RxDownloader.DownloadStatus.Processing -> {
-                            Log.d(TAG, "Processing Progress: ${status.progress}")
+                        is Started,
+                        is Paused -> {
+                            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Paused -> {
-                            Log.d(TAG, "Paused Reason: ${status.reason}")
+                        is Downloading -> {
+                            if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.progress.percentStr())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Waiting -> {
-                            Log.d(TAG, "Waiting Result: ${status.result.title}")
+                        is Completed -> {
+                            if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.task.taskName)
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Failed -> {
-                            Log.d(TAG, "Failed Reason: ${status.reason}")
+                        is Failed -> {
+                            if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, (task.status as Failed).throwable.printStackTrace().toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
+                        is Deleted -> {}
                     }
-                }, { error ->
-                    error.stackTrace
-                }, {
-                    Log.d(TAG, "Complete downloads.")
-                })
+                }
 
         return true
     }
@@ -183,10 +217,7 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        if (task.downloadId > 0) {
-            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            manager.remove(task.downloadId)
-        }
+        RxDownloadRecorder.stopAll()
 
         return true
     }
@@ -198,44 +229,60 @@ class AdvanceDownloader : CordovaPlugin() {
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
+        result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        val uri = Uri.parse(task.url)
-        val request = DownloadManager.Request(uri).apply {
-            setTitle(task.fileName)
-            task.headers.forEach { (k, v) ->
-                addRequestHeader(k, v)
-            }
-            setAllowedNetworkTypes(DownloadManager.Request.NETWORK_MOBILE or DownloadManager.Request.NETWORK_WIFI)
-            setDestinationInExternalFilesDir(cordova.activity.applicationContext, Environment.DIRECTORY_DOWNLOADS, task.fileName)
-        }
-
-        request.execute(cordova.activity.applicationContext, task)
-                .subscribeOn(io())
+        val urls = tasks.map { it.value.url }
+        RxDownloadRecorder.getTaskList(*urls.toTypedArray())
+                .flatMapPublisher { fromIterable(it) }
+                .doOnNext {
+                    it.task.manager(
+                            header = task.headers,
+                            notificationCreator = SimpleNotificationCreator(),
+                            recorder = RoomRecorder()
+                    ).start()
+                }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ status ->
-                    when (status) {
-                        is RxDownloader.DownloadStatus.Complete -> {
-                            Log.d(TAG, "Successful Result: ${status.result.title}")
+                .doOnComplete {
+                    // do nothing.
+                }
+                .subscribeBy { task ->
+                    when(task.status) {
+                        is Normal -> {
+                            //do nothing.
                         }
-                        is RxDownloader.DownloadStatus.Processing -> {
-                            Log.d(TAG, "Processing Progress: ${status.progress}")
+                        is Started,
+                        is Paused -> {
+                            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Paused -> {
-                            Log.d(TAG, "Paused Reason: ${status.reason}")
+                        is Downloading -> {
+                            if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.status.progress.percentStr())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Waiting -> {
-                            Log.d(TAG, "Waiting Result: ${status.result.title}")
+                        is Completed -> {
+                            if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, task.task.taskName)
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
-                        is RxDownloader.DownloadStatus.Failed -> {
-                            Log.d(TAG, "Failed Reason: ${status.reason}")
+                        is Failed -> {
+                            if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
+                                val r = PluginResult(PluginResult.Status.OK, (task.status as Failed).throwable.printStackTrace().toString())
+                                r.keepCallback = true
+                                callbackContext.sendPluginResult(r)
+                            }
                         }
+                        is Deleted -> {}
                     }
-                }, { error ->
-                    error.stackTrace
-                }, {
-                    Log.d(TAG, "Complete downloads.")
-                })
+                }
 
         return true
     }
@@ -249,10 +296,10 @@ class AdvanceDownloader : CordovaPlugin() {
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
 
-        if (task.downloadId > 0) {
-            val manager = cordova.activity.applicationContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            manager.remove(task.downloadId)
-        }
+        RxDownloadRecorder.deleteAll()
+
+        tasks.remove(task.id)
+        editTasks(tasks)
 
         return true
     }
@@ -261,6 +308,8 @@ class AdvanceDownloader : CordovaPlugin() {
         val tasks = getTasks()
         val task = tasks[id]
         task ?: return false
+
+        prefsChangeStatusCallback.edit().putBoolean(STATUS_KEY, true).apply()
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -274,6 +323,8 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
+        prefsChangeStatusCallback.edit().putBoolean(STATUS_KEY, false).apply()
+
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
@@ -285,6 +336,8 @@ class AdvanceDownloader : CordovaPlugin() {
         val tasks = getTasks()
         val task = tasks[id]
         task ?: return false
+
+        prefsProgressCallback.edit().putBoolean(PROGRESS_KEY, true).apply()
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -298,6 +351,36 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
+        prefsProgressCallback.edit().putBoolean(PROGRESS_KEY, false).apply()
+
+        val output = Gson().toJson(task)
+        val result = PluginResult(PluginResult.Status.OK, output)
+        callbackContext.sendPluginResult(result)
+
+        return true
+    }
+
+    private fun setOnComplete(id: String, callbackContext: CallbackContext): Boolean {
+        val tasks = getTasks()
+        val task = tasks[id]
+        task ?: return false
+
+        prefsCompleteCallback.edit().putBoolean(COMPLETE_KEY, true).apply()
+
+        val output = Gson().toJson(task)
+        val result = PluginResult(PluginResult.Status.OK, output)
+        callbackContext.sendPluginResult(result)
+
+        return true
+    }
+
+    private fun removeOnComplete(id: String, callbackContext: CallbackContext): Boolean {
+        val tasks = getTasks()
+        val task = tasks[id]
+        task ?: return false
+
+        prefsCompleteCallback.edit().putBoolean(COMPLETE_KEY, false).apply()
+
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
@@ -309,6 +392,8 @@ class AdvanceDownloader : CordovaPlugin() {
         val tasks = getTasks()
         val task = tasks[id]
         task ?: return false
+
+        prefsFailedCallback.edit().putBoolean(FAILED_KEY, true).apply()
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -322,6 +407,8 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
+        prefsFailedCallback.edit().putBoolean(FAILED_KEY, false).apply()
+
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
@@ -330,10 +417,20 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     private fun getTasks(): MutableMap<String, AdvanceDownloadTask> {
-        return Gson().fromJson(mPrefs.getString(RxDownloader.KEY, "{}"), typeToken.type)
+        return Gson().fromJson(prefsTasks.getString(TASK_KEY, "{}"), typeToken.type)
+    }
+
+    private fun editTasks(tasks: MutableMap<String, AdvanceDownloadTask>) {
+        prefsTasks.edit().putString(TASK_KEY, Gson().toJson(tasks)).apply()
     }
 
     companion object {
-        protected val TAG = "AdvanceDownloader"
+        val TAG = "AdvanceDownloader"
+
+        val TASK_KEY = "prefsTasks"
+        val STATUS_KEY = "prefsChangeStatusCallback"
+        val PROGRESS_KEY = "prefsProgressCallback"
+        val COMPLETE_KEY = "prefsCompleteCallback"
+        val FAILED_KEY = "prefsFailedCallback"
     }
 }

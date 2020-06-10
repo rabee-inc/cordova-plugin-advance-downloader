@@ -23,4 +23,5 @@
         <allow-intent href="itms-apps:*" />
         <!-- <hook type="after_platform_add" src="scripts/ios/after_platform_add.sh"></hook> -->
     </platform>
+    <plugin name="cordova-plugin-android-permissions" spec="1.0.2" ></plugin>
 </widget>
