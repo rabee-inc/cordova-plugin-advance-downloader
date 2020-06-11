@@ -59,10 +59,10 @@ function listAction() {
 function addAction() {
     const addRequestParams = {
         id: 'absfldsfsfjlsdfjs',
-        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        url: 'https://dh2.v.netease.com/2017/cg/fxtpty.mp4',
         size: 123456789,
         path: 'hoge',
-        name: 'dummy.pdf',
+        name: 'dummy.mp4',
         headers: { // 認証ヘッダー
             auautherization: 'hoge.com',
         }
