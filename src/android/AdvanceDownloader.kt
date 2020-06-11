@@ -2,6 +2,7 @@ package jp.rabee
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.reactivex.Flowable.fromIterable
@@ -135,6 +136,12 @@ class AdvanceDownloader : CordovaPlugin() {
         tasks[advanceDownloadTask.id] = advanceDownloadTask
         editTasks(tasks)
 
+        advanceDownloadTask.manager = advanceDownloadTask.url.manager(
+                header = advanceDownloadTask.headers,
+                notificationCreator = SimpleNotificationCreator(),
+                recorder = RoomRecorder()
+        )
+
         val output = Gson().toJson(advanceDownloadTask)
         val result = PluginResult(PluginResult.Status.OK, output)
         callbackContext.sendPluginResult(result)
@@ -155,25 +162,33 @@ class AdvanceDownloader : CordovaPlugin() {
         //MEMO: 実行順番は問わない
         val urls = tasks.map { it.value.url }
         RxDownloadRecorder.getTaskList(*urls.toTypedArray())
-                .flatMapPublisher { fromIterable(it) }
+                .flatMapPublisher {
+                    fromIterable(it)
+                }
                 .doOnNext {
                     it.task.manager(
                             header = task.headers,
                             notificationCreator = SimpleNotificationCreator(),
                             recorder = RoomRecorder()
                     ).start()
+                    Log.d(TAG, "doOnNext.")
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnComplete {
-                    // do nothing.
+                    tasks.remove(task.id)
+                    editTasks(tasks)
+                    Log.d(TAG, "doOnComplete.")
                 }
                 .subscribeBy { task ->
+                    Log.d(TAG, "subscribeBy.")
                     when(task.status) {
                         is Normal -> {
                             //do nothing.
+                            Log.d(TAG, "Change Status: Normal")
                         }
                         is Started,
                         is Paused -> {
+                            Log.d(TAG, "Change Status: Started, Paused")
                             if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
                                 val r = PluginResult(PluginResult.Status.OK, task.status.toString())
                                 r.keepCallback = true
@@ -181,6 +196,7 @@ class AdvanceDownloader : CordovaPlugin() {
                             }
                         }
                         is Downloading -> {
+                            Log.d(TAG, "Change Status: Downloading")
                             if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
                                 val r = PluginResult(PluginResult.Status.OK, task.status.progress.percentStr())
                                 r.keepCallback = true
@@ -188,6 +204,7 @@ class AdvanceDownloader : CordovaPlugin() {
                             }
                         }
                         is Completed -> {
+                            Log.d(TAG, "Change Status: Completed")
                             if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
                                 val r = PluginResult(PluginResult.Status.OK, task.task.taskName)
                                 r.keepCallback = true
@@ -195,13 +212,17 @@ class AdvanceDownloader : CordovaPlugin() {
                             }
                         }
                         is Failed -> {
+                            Log.d(TAG, "Change Status: Failed")
+
                             if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
                                 val r = PluginResult(PluginResult.Status.OK, (task.status as Failed).throwable.printStackTrace().toString())
                                 r.keepCallback = true
                                 callbackContext.sendPluginResult(r)
                             }
                         }
-                        is Deleted -> {}
+                        is Deleted -> {
+                            Log.d(TAG, "Change Status: Deleted")
+                        }
                     }
                 }
 
