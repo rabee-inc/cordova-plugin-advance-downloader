@@ -18,6 +18,7 @@
     <platform name="android">
         <allow-intent href="market:*" />
     </platform>
+    <plugin name="cordova-plugin-android-permissions" spec="1.0.2" ></plugin>
     <platform name="ios">
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />

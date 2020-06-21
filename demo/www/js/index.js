@@ -21,6 +21,13 @@
 // See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
 document.addEventListener('deviceready', onDeviceReady, false);
 function onDeviceReady() {
+    // permissions
+    var permissions = cordova.plugins.permissions;
+    permissions.requestPermissions([
+        permissions.INTERNET,
+        permissions.WRITE_EXTERNAL_STORAGE
+    ]);
+
     // button
     const button1 = document.querySelector('.button1')
     button1.addEventListener('click', listAction);
