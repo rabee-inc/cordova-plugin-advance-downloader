@@ -25,7 +25,8 @@ function onDeviceReady() {
     var permissions = cordova.plugins.permissions;
     permissions.requestPermissions([
         permissions.INTERNET,
-        permissions.WRITE_EXTERNAL_STORAGE
+        permissions.WRITE_EXTERNAL_STORAGE,
+        permissions.READ_EXTERNAL_STORAGE
       ]);
 
     // button
