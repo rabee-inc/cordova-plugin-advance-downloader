@@ -62,8 +62,8 @@ function addAction() {
         id: 'absfldsfsfjlsdfjs',
         url: 'https://dh2.v.netease.com/2017/cg/fxtpty.mp4',
         size: 123456789,
-        path: 'hoge',
-        name: 'dummy.mp4',
+        path: '/downloads',
+        name: 'fxtpty.mp4',
         headers: { // 認証ヘッダー
             auautherization: 'hoge.com',
         }

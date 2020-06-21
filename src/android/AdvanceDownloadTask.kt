@@ -1,7 +1,7 @@
 package jp.rabee
 
 import com.google.gson.annotations.SerializedName
-import zlc.season.rxdownload4.manager.TaskManager
+import com.tonyodev.fetch2.Request
 
 data class AdvanceDownloadTask(
         @SerializedName("id") val id: String,
@@ -10,6 +10,5 @@ data class AdvanceDownloadTask(
         @SerializedName("path") val filePath: String,
         @SerializedName("name") val fileName: String,
         @SerializedName("headers") val headers: MutableMap<String, String>,
-        @SerializedName("manager") var manager: TaskManager,
-        @SerializedName("tag") var tag: Any
+        @SerializedName("request") var request: Request? = null
 )
