@@ -59,10 +59,10 @@ function listAction() {
 function addAction() {
     const addRequestParams = {
         id: 'absfldsfsfjlsdfjs',
-        url: 'https://mazwai.com/videvo_files/video/free/2016-10/small_watermarked/andrew-arthur-breese_boneyard-raw-broll_preview.mp4',
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
         size: 123456789,
         path: 'hoge',
-        name: 'dummy.mp4',
+        name: 'dummy.pdf',
         headers: { // 認証ヘッダー
             auautherization: 'hoge.com',
         }
