@@ -59,7 +59,7 @@ class AdvanceDownloader : CordovaPlugin() {
         val fetchConfiguration = FetchConfiguration.Builder(cordova.activity)
                 .setNamespace(TAG)
                 .setDownloadConcurrentLimit(3)
-                .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
+                .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL))
                 .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
                         return fetch
@@ -427,6 +427,7 @@ class AdvanceDownloader : CordovaPlugin() {
     override fun onDestroy() {
         super.onDestroy()
         fetch.close()
+        prefsTasks.edit().clear().apply()
     }
 
     // MARK: - FetchListener
@@ -438,14 +439,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onCancelled(download: Download) {
             Log.d(TAG, "Cancelled Download: ${download.url}")
-            val tasks = getTasks()
-            tasks.forEach {
-                if (it.value.request?.id == download.request.id) {
-                    tasks.remove(it.value.id)
-                    editTasks(tasks)
-                }
-            }
-
             if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
                 val r = PluginResult(PluginResult.Status.OK, download.status.toString())
                 r.keepCallback = true
@@ -455,14 +448,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onCompleted(download: Download) {
             Log.d(TAG, "Completed Download: ${download.url}")
-            val tasks = getTasks()
-            tasks.forEach {
-                if (it.value.request?.id == download.request.id) {
-                    tasks.remove(it.value.id)
-                    editTasks(tasks)
-                }
-            }
-
             if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
                 val r = PluginResult(PluginResult.Status.OK, download.url)
                 r.keepCallback = true
@@ -472,13 +457,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onDeleted(download: Download) {
             Log.d(TAG, "Deleted Download: ${download.url}")
-            val tasks = getTasks()
-            tasks.forEach {
-                if (it.value.request?.id == download.request.id) {
-                    tasks.remove(it.value.id)
-                    editTasks(tasks)
-                }
-            }
             if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
                 val r = PluginResult(PluginResult.Status.OK, download.status.toString())
                 r.keepCallback = true
@@ -492,13 +470,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onError(download: Download, error: Error, throwable: Throwable?) {
             Log.d(TAG, "Error Download: ${download.url}")
-            val tasks = getTasks()
-            tasks.forEach {
-                if (it.value.request?.id == download.request.id) {
-                    tasks.remove(it.value.id)
-                    editTasks(tasks)
-                }
-            }
             if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
                 val r = PluginResult(PluginResult.Status.OK, download.error.toString())
                 r.keepCallback = true
@@ -535,14 +506,6 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onRemoved(download: Download) {
             Log.d(TAG, "Removed Download: ${download.url}")
-            val tasks = getTasks()
-            tasks.forEach {
-                if (it.value.request?.id == download.request.id) {
-                    tasks.remove(it.value.id)
-                    editTasks(tasks)
-                }
-            }
-
             if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
                 val r = PluginResult(PluginResult.Status.OK, download.status.toString())
                 r.keepCallback = true
@@ -576,6 +539,5 @@ class AdvanceDownloader : CordovaPlugin() {
                 cContext.sendPluginResult(r)
             }
         }
-
     }
 }

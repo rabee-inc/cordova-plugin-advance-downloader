@@ -58,19 +58,44 @@ function listAction() {
 }
 
 function addAction() {
-    const addRequestParams = {
-        id: 'absfldsfsfjlsdfjs',
-        url: 'https://dh2.v.netease.com/2017/cg/fxtpty.mp4',
-        size: 123456789,
-        path: '/downloads',
-        name: 'fxtpty.mp4',
-        headers: { // 認証ヘッダー
-            auautherization: 'hoge.com',
-        }
+    const addRequestParams = [
+        {
+            id: 'absfldsfsfjlsdfjs',
+            url: 'https://dh2.v.netease.com/2017/cg/fxtpty.mp4',
+            size: 123456789,
+            path: '/downloads',
+            name: 'fxtpty.mp4',
+            headers: { // 認証ヘッダー
+                auautherization: 'hoge.com',
+            }
 
-    }
+        },
+        {
+            id: 'hogefugafeaoiefjao',
+            url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+            size: 123456789,
+            path: '/downloads',
+            name: 'dummy.pdf',
+            headers: { // 認証ヘッダー
+                auautherization: 'hoge.com',
+            }
 
-    window.AdvanceDownloader.add(addRequestParams).then((v) => {
+        },
+        {
+            id: 'fugapiyodafkjoaweifja',
+            url: 'http://www.hochmuth.com/mp3/Haydn_Cello_Concerto_D-1.mp3',
+            size: 123456789,
+            path: '/downloads',
+            name: 'Haydn_Cello_Concerto_D-1.mp3',
+            headers: { // 認証ヘッダー
+                auautherization: 'hoge.com',
+            }
+
+        },
+    ]
+
+
+    window.AdvanceDownloader.add(addRequestParams[Math.floor(Math.random() * addRequestParams.length)]).then((v) => {
         window.alert(v)
     });
 }
