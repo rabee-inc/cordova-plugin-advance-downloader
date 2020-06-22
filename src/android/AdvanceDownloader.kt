@@ -16,40 +16,20 @@ import org.json.*
 class AdvanceDownloader : CordovaPlugin() {
     companion object {
         const val TAG = "AdvanceDownloader"
-
         const val TASK_KEY = "prefsTasks"
-        const val STATUS_KEY = "prefsChangeStatusCallback"
-        const val PROGRESS_KEY = "prefsProgressCallback"
-        const val COMPLETE_KEY = "prefsCompleteCallback"
-        const val FAILED_KEY = "prefsFailedCallback"
     }
 
     private lateinit var cContext: CallbackContext
     private lateinit var fetch: Fetch
 
+    private var onChangedStatusCallbacks : MutableMap<String, MutableList<CallbackContext>> = mutableMapOf()
+    private var onProgressCallbacks : MutableMap<String, MutableList<CallbackContext>> = mutableMapOf()
+    private var onCompleteCallbacks : MutableMap<String, MutableList<CallbackContext>> = mutableMapOf()
+    private var onFailedCallbacks : MutableMap<String, MutableList<CallbackContext>> = mutableMapOf()
+
     @Suppress("UNUSED_PARAMETER")
     private var prefsTasks: SharedPreferences
         get() = cordova.activity.applicationContext.getSharedPreferences(TASK_KEY, Context.MODE_PRIVATE)
-        set(value) {}
-
-    @Suppress("UNUSED_PARAMETER")
-    private var prefsChangeStatusCallback: SharedPreferences
-        get() = cordova.activity.applicationContext.getSharedPreferences(STATUS_KEY, Context.MODE_PRIVATE)
-        set(value) {}
-
-    @Suppress("UNUSED_PARAMETER")
-    private var prefsProgressCallback: SharedPreferences
-        get() = cordova.activity.applicationContext.getSharedPreferences(PROGRESS_KEY, Context.MODE_PRIVATE)
-        set(value) {}
-
-    @Suppress("UNUSED_PARAMETER")
-    private var prefsCompleteCallback: SharedPreferences
-        get() = cordova.activity.applicationContext.getSharedPreferences(COMPLETE_KEY, Context.MODE_PRIVATE)
-        set(value) {}
-
-    @Suppress("UNUSED_PARAMETER")
-    private var prefsFailedCallback: SharedPreferences
-        get() = cordova.activity.applicationContext.getSharedPreferences(FAILED_KEY, Context.MODE_PRIVATE)
         set(value) {}
 
     private val typeToken = object : TypeToken<MutableMap<String, AdvanceDownloadTask>>() {}
@@ -67,6 +47,7 @@ class AdvanceDownloader : CordovaPlugin() {
                 })
                 .build()
         fetch = Fetch.Impl.getInstance(fetchConfiguration)
+
 
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
     }
@@ -285,7 +266,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsChangeStatusCallback.edit().putBoolean(STATUS_KEY, true).apply()
+        onChangedStatusCallbacks[id]?.also { ctxs ->
+            ctxs.add(callbackContext)
+            onChangedStatusCallbacks[id] = ctxs
+        }?:run {
+            onChangedStatusCallbacks[id] = mutableListOf(callbackContext)
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -299,7 +285,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsChangeStatusCallback.edit().putBoolean(STATUS_KEY, false).apply()
+        onChangedStatusCallbacks[id]?.let { ctxs ->
+            ctxs.forEachIndexed { k, _ ->
+                if (ctxs[k] == callbackContext) { ctxs.removeAt(k) }
+            }
+            onChangedStatusCallbacks[id] = ctxs
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -313,7 +304,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsProgressCallback.edit().putBoolean(PROGRESS_KEY, true).apply()
+        onProgressCallbacks[id]?.also { ctxs ->
+            ctxs.add(callbackContext)
+            onProgressCallbacks[id] = ctxs
+        }?:run {
+            onProgressCallbacks[id] = mutableListOf(callbackContext)
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -327,7 +323,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsProgressCallback.edit().putBoolean(PROGRESS_KEY, false).apply()
+        onProgressCallbacks[id]?.let { ctxs ->
+            ctxs.forEachIndexed { k, _ ->
+                if (ctxs[k] == callbackContext) { ctxs.removeAt(k) }
+            }
+            onProgressCallbacks[id] = ctxs
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -341,7 +342,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsCompleteCallback.edit().putBoolean(COMPLETE_KEY, true).apply()
+        onCompleteCallbacks[id]?.also { ctxs ->
+            ctxs.add(callbackContext)
+            onCompleteCallbacks[id] = ctxs
+        }?:run {
+            onCompleteCallbacks[id] = mutableListOf(callbackContext)
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -355,7 +361,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsCompleteCallback.edit().putBoolean(COMPLETE_KEY, false).apply()
+        onCompleteCallbacks[id]?.let { ctxs ->
+            ctxs.forEachIndexed { k, _ ->
+                if (ctxs[k] == callbackContext) { ctxs.removeAt(k) }
+            }
+            onCompleteCallbacks[id] = ctxs
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -369,7 +380,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsFailedCallback.edit().putBoolean(FAILED_KEY, true).apply()
+        onFailedCallbacks[id]?.also { ctxs ->
+            ctxs.add(callbackContext)
+            onFailedCallbacks[id] = ctxs
+        }?:run {
+            onFailedCallbacks[id] = mutableListOf(callbackContext)
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -383,7 +399,12 @@ class AdvanceDownloader : CordovaPlugin() {
         val task = tasks[id]
         task ?: return false
 
-        prefsFailedCallback.edit().putBoolean(FAILED_KEY, false).apply()
+        onFailedCallbacks[id]?.let { ctxs ->
+            ctxs.forEachIndexed { k, _ ->
+                if (ctxs[k] == callbackContext) { ctxs.removeAt(k) }
+            }
+            onFailedCallbacks[id] = ctxs
+        }
 
         val output = Gson().toJson(task)
         val result = PluginResult(PluginResult.Status.OK, output)
@@ -439,29 +460,48 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onCancelled(download: Download) {
             Log.d(TAG, "Cancelled Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onCompleted(download: Download) {
             Log.d(TAG, "Completed Download: ${download.url}")
-            if (prefsCompleteCallback.getBoolean(COMPLETE_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.url)
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onCompleteCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.url)
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onDeleted(download: Download) {
             Log.d(TAG, "Deleted Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
+
         }
 
         override fun onDownloadBlockUpdated(download: Download, downloadBlock: DownloadBlock, totalBlocks: Int) {
@@ -470,74 +510,122 @@ class AdvanceDownloader : CordovaPlugin() {
 
         override fun onError(download: Download, error: Error, throwable: Throwable?) {
             Log.d(TAG, "Error Download: ${download.url}")
-            if (prefsFailedCallback.getBoolean(FAILED_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.error.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onFailedCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.error.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onPaused(download: Download) {
             Log.d(TAG, "Paused Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onProgress(download: Download, etaInMilliSeconds: Long, downloadedBytesPerSecond: Long) {
             Log.d(TAG, "Progress Download: ${download.progress}")
-            if (prefsProgressCallback.getBoolean(PROGRESS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.progress)
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onProgressCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.progress)
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onQueued(download: Download, waitingOnNetwork: Boolean) {
             Log.d(TAG, "Queued Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onRemoved(download: Download) {
             Log.d(TAG, "Removed Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onResumed(download: Download) {
             Log.d(TAG, "Resumed Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onStarted(download: Download, downloadBlocks: List<DownloadBlock>, totalBlocks: Int) {
             Log.d(TAG, "Started Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onWaitingNetwork(download: Download) {
             Log.d(TAG, "WaitingNetwork Download: ${download.url}")
-            if (prefsChangeStatusCallback.getBoolean(STATUS_KEY, true)) {
-                val r = PluginResult(PluginResult.Status.OK, download.status.toString())
-                r.keepCallback = true
-                cContext.sendPluginResult(r)
+
+            var ctxs : MutableList<CallbackContext>? = null
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.request.id) {
+                    onChangedStatusCallbacks[entity.value.id]?.let { ctxs = it }
+                }
             }
+
+            val r = PluginResult(PluginResult.Status.OK, download.status.toString())
+            r.keepCallback = true
+            ctxs?.forEach { it.sendPluginResult(r) }
         }
     }
 }
