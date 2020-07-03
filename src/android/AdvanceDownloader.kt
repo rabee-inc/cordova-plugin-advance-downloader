@@ -2,16 +2,20 @@ package jp.rabee
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.net.Uri
+import android.os.Environment
+import android.os.StatFs
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.tonyodev.fetch2.*
 import com.tonyodev.fetch2core.DownloadBlock
 import com.tonyodev.fetch2core.Downloader
+import com.tonyodev.fetch2core.Func
 import org.apache.cordova.*
+import org.json.JSONArray
 import org.json.JSONException
-import org.json.*
+import org.json.JSONObject
+
 
 class AdvanceDownloader : CordovaPlugin() {
     companion object {
@@ -37,9 +41,8 @@ class AdvanceDownloader : CordovaPlugin() {
     // アプリ起動時に呼ばれる
     override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
         val fetchConfiguration = FetchConfiguration.Builder(cordova.activity)
-                .setNamespace(TAG)
-                .setDownloadConcurrentLimit(3)
-                .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.PARALLEL))
+                .setDownloadConcurrentLimit(4)
+                .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
                 .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
                         return fetch
@@ -47,8 +50,6 @@ class AdvanceDownloader : CordovaPlugin() {
                 })
                 .build()
         fetch = Fetch.Impl.getInstance(fetchConfiguration)
-
-
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
     }
 
@@ -72,16 +73,33 @@ class AdvanceDownloader : CordovaPlugin() {
                 }
             }
             "add" -> {
+                val tasks = getTasks()
+                val path = value.getString("file_path")
+                val index = System.currentTimeMillis()
+                value.put("index", index)
+                value.put("file_path", path.removePrefix("file://"))
+
                 val task = Gson().fromJson(value.toString(), AdvanceDownloadTask::class.java)
-                task.request = Request(task.url, getFilePath(task.url))
+                task.request = Request(task.url, task.filePath)
                 task.request?.apply {
                     priority = Priority.HIGH
                     networkType = NetworkType.ALL
-                    for (header in task.headers) {
-                        addHeader(header.key, header.value)
+                    if (task.headers != null) {
+                        for (header in task.headers) {
+                            addHeader(header.key, header.value)
+                        }
                     }
+
                 }
 
+                // サイズ計算をする
+                val internalPath = Environment.getDataDirectory().absolutePath
+                val availableSize = getAvailableSize(internalPath)
+                if (availableSize < task.size) {
+                    val result = PluginResult(PluginResult.Status.ERROR, "size over")
+                    callbackContext.sendPluginResult(result)
+                    return true;
+                }
                 cordova.threadPool.execute {
                     result = this.add(task, cContext)
                 }
@@ -207,11 +225,19 @@ class AdvanceDownloader : CordovaPlugin() {
         result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        //MEMO: 実行順番は問わない
-        val requests = tasks.map { it.value.request } as MutableList<Request?>
-        fetch.enqueue(requests.filterNotNull())
-                .addListener(AdvanceFetchListener())
+        val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.QUEUED)
+        fetch.getDownloadsWithStatus(status, Func<List<Download>> { result ->
+            if (result.isEmpty()) {
+                val tasks = getTasks()
+                if (tasks.isNotEmpty()) {
+                    val requests = tasks.toSortedMap(Comparator { k1, k2 -> if (tasks[k1]!!.index > tasks[k2]!!.index)  1 else -1 })
+                                        .map { it.value.request } as MutableList<Request?>
 
+                    fetch.enqueue(requests.filterNotNull())
+                            .addListener(AdvanceFetchListener())
+                }
+            }
+        })
         return true
     }
 
@@ -273,9 +299,6 @@ class AdvanceDownloader : CordovaPlugin() {
             onChangedStatusCallbacks[id] = mutableListOf(callbackContext)
         }
 
-        val output = Gson().toJson(task)
-        val result = PluginResult(PluginResult.Status.OK, output)
-        callbackContext.sendPluginResult(result)
 
         return true
     }
@@ -291,19 +314,10 @@ class AdvanceDownloader : CordovaPlugin() {
             }
             onChangedStatusCallbacks[id] = ctxs
         }
-
-        val output = Gson().toJson(task)
-        val result = PluginResult(PluginResult.Status.OK, output)
-        callbackContext.sendPluginResult(result)
-
         return true
     }
 
     private fun setOnProgress(id: String, callbackContext: CallbackContext): Boolean {
-        val tasks = getTasks()
-        val task = tasks[id]
-        task ?: return false
-
         onProgressCallbacks[id]?.also { ctxs ->
             ctxs.add(callbackContext)
             onProgressCallbacks[id] = ctxs
@@ -311,9 +325,6 @@ class AdvanceDownloader : CordovaPlugin() {
             onProgressCallbacks[id] = mutableListOf(callbackContext)
         }
 
-        val output = Gson().toJson(task)
-        val result = PluginResult(PluginResult.Status.OK, output)
-        callbackContext.sendPluginResult(result)
 
         return true
     }
@@ -338,9 +349,6 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     private fun setOnComplete(id: String, callbackContext: CallbackContext): Boolean {
-        val tasks = getTasks()
-        val task = tasks[id]
-        task ?: return false
 
         onCompleteCallbacks[id]?.also { ctxs ->
             ctxs.add(callbackContext)
@@ -348,10 +356,6 @@ class AdvanceDownloader : CordovaPlugin() {
         }?:run {
             onCompleteCallbacks[id] = mutableListOf(callbackContext)
         }
-
-        val output = Gson().toJson(task)
-        val result = PluginResult(PluginResult.Status.OK, output)
-        callbackContext.sendPluginResult(result)
 
         return true
     }
@@ -406,10 +410,6 @@ class AdvanceDownloader : CordovaPlugin() {
             onFailedCallbacks[id] = ctxs
         }
 
-        val output = Gson().toJson(task)
-        val result = PluginResult(PluginResult.Status.OK, output)
-        callbackContext.sendPluginResult(result)
-
         return true
     }
 
@@ -421,13 +421,6 @@ class AdvanceDownloader : CordovaPlugin() {
         prefsTasks.edit().putString(TASK_KEY, Gson().toJson(tasks)).apply()
     }
 
-    private fun getFilePath(url: String) : String {
-        val url = Uri.parse(url)
-        val fileName = url.lastPathSegment
-        val dir = getSavedDir()
-        return ("$dir/DownloadList/$fileName")
-
-    }
 
     private fun getSavedDir() : String {
         return cordova.activity.applicationContext.filesDir.toString()
@@ -449,6 +442,17 @@ class AdvanceDownloader : CordovaPlugin() {
         super.onDestroy()
         fetch.close()
         prefsTasks.edit().clear().apply()
+    }
+
+    private fun getAvailableSize(path: String?): Long {
+        var size: Long = -1
+        if (path != null) {
+            val fs = StatFs(path)
+            val blockSize = fs.blockSize.toLong()
+            val availableBlockSize = fs.availableBlocks.toLong()
+            size = blockSize * availableBlockSize
+        }
+        return size
     }
 
     // MARK: - FetchListener
@@ -483,8 +487,26 @@ class AdvanceDownloader : CordovaPlugin() {
                 }
             }
 
+            // download が完了したら消す
+            val restTask = getTasks().filter { it -> it.value.request?.id != download.request.id } as MutableMap<String, AdvanceDownloadTask>
+            editTasks(restTask)
+
+            // ダウンロード中なものがなければ新規でダウンロードを開始する
+            val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.QUEUED)
+            fetch.getDownloadsWithStatus(status, Func<List<Download>> { result ->
+                if (result.isEmpty()) {
+                    val tasks = getTasks()
+                    if (tasks.isNotEmpty()) {
+                        val requests = tasks.toSortedMap(Comparator { k1, k2 -> if (tasks[k1]!!.index > tasks[k2]!!.index)  1 else -1 })
+                                .map { it.value.request } as MutableList<Request?>
+
+                        fetch.enqueue(requests.filterNotNull())
+                                .addListener(AdvanceFetchListener())
+                    }
+                }
+            })
+
             val r = PluginResult(PluginResult.Status.OK, download.url)
-            r.keepCallback = true
             ctxs?.forEach { it.sendPluginResult(r) }
         }
 
@@ -509,7 +531,7 @@ class AdvanceDownloader : CordovaPlugin() {
         }
 
         override fun onError(download: Download, error: Error, throwable: Throwable?) {
-            Log.d(TAG, "Error Download: ${download.url}")
+            Log.d(TAG, "Error Download: ${download.error}")
 
             var ctxs : MutableList<CallbackContext>? = null
             getTasks().forEach { entity ->
@@ -548,7 +570,9 @@ class AdvanceDownloader : CordovaPlugin() {
                 }
             }
 
-            val r = PluginResult(PluginResult.Status.OK, download.progress)
+            val data = JSONObject()
+            data.put("progress", download.progress/100.0);
+            val r = PluginResult(PluginResult.Status.OK, data)
             r.keepCallback = true
             ctxs?.forEach { it.sendPluginResult(r) }
         }
