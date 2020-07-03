@@ -2,12 +2,7 @@ dependencies {
     api 'com.android.support:multidex:1.0.3'
 
     implementation 'com.google.code.gson:gson:2.8.6'
-
-    def rxdownload_version = "1.1.2"
-    implementation "com.github.ssseasonnn.RxDownload:rxdownload4:$rxdownload_version"
-    implementation "com.github.ssseasonnn.RxDownload:rxdownload4-manager:$rxdownload_version"
-    implementation "com.github.ssseasonnn.RxDownload:rxdownload4-notification:$rxdownload_version"
-    implementation "com.github.ssseasonnn.RxDownload:rxdownload4-recorder:$rxdownload_version"
+    implementation "androidx.tonyodev.fetch2:xfetch2:3.1.4"
 }
 
 repositories() {
