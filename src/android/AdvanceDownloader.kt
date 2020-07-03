@@ -41,7 +41,8 @@ class AdvanceDownloader : CordovaPlugin() {
     // アプリ起動時に呼ばれる
     override public fun initialize(cordova: CordovaInterface,  webView: CordovaWebView) {
         val fetchConfiguration = FetchConfiguration.Builder(cordova.activity)
-                .setDownloadConcurrentLimit(4)
+                .setNamespace("")
+                .setDownloadConcurrentLimit(1)
                 .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
                 .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
@@ -50,7 +51,11 @@ class AdvanceDownloader : CordovaPlugin() {
                 })
                 .build()
         fetch = Fetch.Impl.getInstance(fetchConfiguration)
+        fetch.removeListener(AdvanceFetchListener())
+        fetch.addListener(AdvanceFetchListener())
+        fetch.removeAll();
         println("hi! This is AdvanceDownloader. Now intitilaizing ...")
+
     }
 
     // js 側で関数が実行されるとこの関数がまず発火する
@@ -225,7 +230,7 @@ class AdvanceDownloader : CordovaPlugin() {
         result.keepCallback = true
         callbackContext.sendPluginResult(result)
 
-        val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.QUEUED)
+        val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.QUEUED, Status.ADDED)
         fetch.getDownloadsWithStatus(status, Func<List<Download>> { result ->
             if (result.isEmpty()) {
                 val tasks = getTasks()
@@ -234,7 +239,7 @@ class AdvanceDownloader : CordovaPlugin() {
                                         .map { it.value.request } as MutableList<Request?>
 
                     fetch.enqueue(requests.filterNotNull())
-                            .addListener(AdvanceFetchListener())
+
                 }
             }
         })
@@ -430,17 +435,16 @@ class AdvanceDownloader : CordovaPlugin() {
 
     override fun onResume(multitasking: Boolean) {
         super.onResume(multitasking)
-        fetch.addListener(AdvanceFetchListener())
     }
 
     override fun onPause(multitasking: Boolean) {
         super.onPause(multitasking)
-        fetch.removeListener(AdvanceFetchListener())
     }
 
     override fun onDestroy() {
         super.onDestroy()
         fetch.close()
+        fetch.removeListener(AdvanceFetchListener())
         prefsTasks.edit().clear().apply()
     }
 
@@ -472,6 +476,9 @@ class AdvanceDownloader : CordovaPlugin() {
                 }
             }
 
+            val newTasks = getTasks().filter { entity -> entity.value.request?.id != download.request.id }.toMutableMap()
+            editTasks(newTasks)
+
             val r = PluginResult(PluginResult.Status.OK, download.status.toString())
             r.keepCallback = true
             ctxs?.forEach { it.sendPluginResult(r) }
@@ -482,17 +489,27 @@ class AdvanceDownloader : CordovaPlugin() {
 
             var ctxs : MutableList<CallbackContext>? = null
             getTasks().forEach { entity ->
-                if (entity.value.request?.id == download.request.id) {
+                if (entity.value.request?.id == download.id) {
                     onCompleteCallbacks[entity.value.id]?.let { ctxs = it }
                 }
             }
 
+            val r = PluginResult(PluginResult.Status.OK, download.url)
+            ctxs?.forEach {
+                it.sendPluginResult(r)
+            }
+
+            getTasks().forEach { entity ->
+                if (entity.value.request?.id == download.id) {
+                    onCompleteCallbacks[entity.value.id]?.clear()
+                }
+            }
             // download が完了したら消す
-            val restTask = getTasks().filter { it -> it.value.request?.id != download.request.id } as MutableMap<String, AdvanceDownloadTask>
+            val restTask = getTasks().filter { it -> it.value.request?.id != download.id } as MutableMap<String, AdvanceDownloadTask>
             editTasks(restTask)
 
             // ダウンロード中なものがなければ新規でダウンロードを開始する
-            val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.QUEUED)
+            val status:List<Status> = mutableListOf(Status.DOWNLOADING, Status.ADDED, Status.QUEUED)
             fetch.getDownloadsWithStatus(status, Func<List<Download>> { result ->
                 if (result.isEmpty()) {
                     val tasks = getTasks()
@@ -501,13 +518,11 @@ class AdvanceDownloader : CordovaPlugin() {
                                 .map { it.value.request } as MutableList<Request?>
 
                         fetch.enqueue(requests.filterNotNull())
-                                .addListener(AdvanceFetchListener())
                     }
                 }
+
             })
 
-            val r = PluginResult(PluginResult.Status.OK, download.url)
-            ctxs?.forEach { it.sendPluginResult(r) }
         }
 
         override fun onDeleted(download: Download) {
@@ -565,7 +580,7 @@ class AdvanceDownloader : CordovaPlugin() {
 
             var ctxs : MutableList<CallbackContext>? = null
             getTasks().forEach { entity ->
-                if (entity.value.request?.id == download.request.id) {
+                if (entity.value.request?.id == download.id) {
                     onProgressCallbacks[entity.value.id]?.let { ctxs = it }
                 }
             }
