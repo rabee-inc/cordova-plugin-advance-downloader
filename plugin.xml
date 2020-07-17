@@ -28,6 +28,7 @@
     <!-- soruce -->
     <source-file src="src/android/AdvanceDownloader.kt" target-dir="app/src/main/kotlin/jp/rabee"/>
     <source-file src="src/android/AdvanceDownloadTask.kt" target-dir="app/src/main/kotlin/jp/rabee"/>
+    <source-file src="src/android/AdvanceDownloadFetchNotificationManager.kt" target-dir="app/src/main/kotlin/jp/rabee"/>
 
     <!--gradle file-->
     <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />

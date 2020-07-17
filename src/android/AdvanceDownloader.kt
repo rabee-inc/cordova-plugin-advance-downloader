@@ -44,7 +44,7 @@ class AdvanceDownloader : CordovaPlugin() {
                 .setNamespace("")
                 .setDownloadConcurrentLimit(1)
                 .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
-                .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
+                .setNotificationManager(object : AdvanceDownloadFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
                         return fetch
                     }
