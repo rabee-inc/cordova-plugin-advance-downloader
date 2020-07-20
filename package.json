@@ -23,9 +23,16 @@
     "url": "https://github.com/rabee-inc/cordova-plugin-advance-downloader/issues"
   },
   "dependencies": {
-    "xml2js": "^0.4.23",
+    "@babel/core": "^7.10.5",
+    "@babel/preset-env": "^7.10.4",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-remote": "^0.0.3",
+    "gulp-rename": "^2.0.0",
+    "q": "1.5.1",
     "sax": "1.2.4",
-    "q": "1.5.1"
+    "xml2js": "^0.4.23"
   },
   "homepage": "https://github.com/rabee-inc/cordova-plugin-advance-downloader#readme",
   "keywords": [
