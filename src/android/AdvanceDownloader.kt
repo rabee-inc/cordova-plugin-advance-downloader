@@ -79,7 +79,14 @@ class AdvanceDownloader : CordovaPlugin() {
             }
             "add" -> {
                 val tasks = getTasks()
-                val path = value.getString("file_path")
+
+                val path = if (value.has("file_path")) {
+                    value.getString("file_path")
+                }
+                else {
+                    value.getString("path")
+                }
+
                 val index = System.currentTimeMillis()
                 value.put("index", index)
                 value.put("file_path", path.removePrefix("file://"))
