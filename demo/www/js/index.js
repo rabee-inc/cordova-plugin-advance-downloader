@@ -68,30 +68,29 @@ function addAction() {
             headers: { // 認証ヘッダー
                 auautherization: 'hoge.com',
             }
-
         },
-        {
-            id: 'hogefugafeaoiefjao',
-            url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-            size: 123456789,
-            path: '/downloads',
-            name: 'dummy.pdf',
-            headers: { // 認証ヘッダー
-                auautherization: 'hoge.com',
-            }
+        // {
+        //     id: 'hogefugafeaoiefjao',
+        //     url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        //     size: 123456789,
+        //     path: '/downloads',
+        //     name: 'dummy.pdf',
+        //     headers: { // 認証ヘッダー
+        //         auautherization: 'hoge.com',
+        //     }
 
-        },
-        {
-            id: 'fugapiyodafkjoaweifja',
-            url: 'http://www.hochmuth.com/mp3/Haydn_Cello_Concerto_D-1.mp3',
-            size: 123456789,
-            path: '/downloads',
-            name: 'Haydn_Cello_Concerto_D-1.mp3',
-            headers: { // 認証ヘッダー
-                auautherization: 'hoge.com',
-            }
+        // },
+        // {
+        //     id: 'fugapiyodafkjoaweifja',
+        //     url: 'http://www.hochmuth.com/mp3/Haydn_Cello_Concerto_D-1.mp3',
+        //     size: 123456789,
+        //     path: '/downloads',
+        //     name: 'Haydn_Cello_Concerto_D-1.mp3',
+        //     headers: { // 認証ヘッダー
+        //         auautherization: 'hoge.com',
+        //     }
 
-        },
+        // },
     ]
 
 

@@ -44,7 +44,8 @@ class AdvanceDownloader : CordovaPlugin() {
                 .setNamespace("")
                 .setDownloadConcurrentLimit(1)
                 .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
-                .setNotificationManager(object : AdvanceDownloadFetchNotificationManager(cordova.activity) {
+                .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
+//                .setNotificationManager(object : AdvanceDownloadFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
                         return fetch
                     }
@@ -101,7 +102,6 @@ class AdvanceDownloader : CordovaPlugin() {
                             addHeader(header.key, header.value)
                         }
                     }
-
                 }
 
                 // サイズ計算をする
