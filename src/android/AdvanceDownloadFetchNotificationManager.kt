@@ -99,9 +99,7 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
             style.addLine("${downloadNotification.total} $contentTitle")
         }
         notificationBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setSmallIcon(
-                        context.resources.getIdentifier("stat_sys_download_done", "drawable", context.packageName)
-                )
+                .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setContentTitle(context.getString(R.string.fetch_notification_default_channel_name))
                 .setContentText("")
                 .setStyle(style)
@@ -114,11 +112,9 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
                                     downloadNotification: DownloadNotification,
                                     context: Context) {
         val smallIcon = if (downloadNotification.isDownloading) {
-            context.resources.getIdentifier("stat_sys_download", "drawable", context.packageName)
-
+            android.R.drawable.stat_sys_download
         } else {
-            context.resources.getIdentifier("stat_sys_download_done", "drawable", context.packageName)
-
+            android.R.drawable.stat_sys_download_done
         }
         notificationBuilder.setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setSmallIcon(smallIcon)
@@ -332,9 +328,7 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
                     .setTimeoutAfter(DEFAULT_NOTIFICATION_TIMEOUT_AFTER_RESET)
                     .setOngoing(false)
                     .setGroup(groupId.toString())
-                    .setSmallIcon(
-                            context.resources.getIdentifier("stat_sys_download_done", "drawable", context.packageName)
-                    )
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
                     .mActions.clear()
             return notificationBuilder
         }
