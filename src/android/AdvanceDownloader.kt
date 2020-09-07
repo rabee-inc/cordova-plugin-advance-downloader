@@ -2,6 +2,7 @@ package jp.rabee
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Environment
 import android.os.StatFs
 import android.util.Log
@@ -44,7 +45,7 @@ class AdvanceDownloader : CordovaPlugin() {
                 .setNamespace("")
                 .setDownloadConcurrentLimit(1)
                 .setHttpDownloader(HttpUrlConnectionDownloader(Downloader.FileDownloaderType.SEQUENTIAL))
-                .setNotificationManager(object : DefaultFetchNotificationManager(cordova.activity) {
+                .setNotificationManager(object : AdvanceDownloadFetchNotificationManager(cordova.activity) {
                     override fun getFetchInstanceForNamespace(namespace: String): Fetch {
                         return fetch
                     }
@@ -85,6 +86,8 @@ class AdvanceDownloader : CordovaPlugin() {
                 value.put("file_path", path.removePrefix("file://"))
 
                 val task = Gson().fromJson(value.toString(), AdvanceDownloadTask::class.java)
+                // MEMO: debug時は getFilePathを利用する
+//                task.request = Request(task.url, getFilePath(task.url))
                 task.request = Request(task.url, task.filePath)
                 task.request?.apply {
                     priority = Priority.HIGH
@@ -426,6 +429,12 @@ class AdvanceDownloader : CordovaPlugin() {
         prefsTasks.edit().putString(TASK_KEY, Gson().toJson(tasks)).apply()
     }
 
+    private fun getFilePath(url: String) : String {
+        val url = Uri.parse(url)
+        val fileName = url.lastPathSegment
+        val dir = getSavedDir()
+        return ("$dir/DownloadList/$fileName")
+    }
 
     private fun getSavedDir() : String {
         return cordova.activity.applicationContext.filesDir.toString()
@@ -489,7 +498,7 @@ class AdvanceDownloader : CordovaPlugin() {
 
             var ctxs : MutableList<CallbackContext>? = null
             getTasks().forEach { entity ->
-                if (entity.value.request?.id == download.id) {
+                if (entity.value.request?.id == download.request.id) {
                     onCompleteCallbacks[entity.value.id]?.let { ctxs = it }
                 }
             }
@@ -500,12 +509,12 @@ class AdvanceDownloader : CordovaPlugin() {
             }
 
             getTasks().forEach { entity ->
-                if (entity.value.request?.id == download.id) {
+                if (entity.value.request?.id == download.request.id) {
                     onCompleteCallbacks[entity.value.id]?.clear()
                 }
             }
             // download が完了したら消す
-            val restTask = getTasks().filter { it -> it.value.request?.id != download.id } as MutableMap<String, AdvanceDownloadTask>
+            val restTask = getTasks().filter { it -> it.value.request?.id != download.request.id } as MutableMap<String, AdvanceDownloadTask>
             editTasks(restTask)
 
             // ダウンロード中なものがなければ新規でダウンロードを開始する
@@ -580,7 +589,7 @@ class AdvanceDownloader : CordovaPlugin() {
 
             var ctxs : MutableList<CallbackContext>? = null
             getTasks().forEach { entity ->
-                if (entity.value.request?.id == download.id) {
+                if (entity.value.request?.id == download.request.id) {
                     onProgressCallbacks[entity.value.id]?.let { ctxs = it }
                 }
             }
