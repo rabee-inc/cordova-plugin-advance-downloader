@@ -87,7 +87,7 @@ class AdvanceDownloader : CordovaPlugin() {
 
                 val task = Gson().fromJson(value.toString(), AdvanceDownloadTask::class.java)
                 // MEMO: debug時は getFilePathを利用する
-//                task.request = Request(task.url, getFilePath(task.url))
+                // task.request = Request(task.url, getFilePath(task.url))
                 task.request = Request(task.url, task.filePath)
                 task.request?.apply {
                     priority = Priority.HIGH
@@ -469,7 +469,6 @@ class AdvanceDownloader : CordovaPlugin() {
     }
 
     // MARK: - FetchListener
-
     private inner class AdvanceFetchListener : FetchListener {
         override fun onAdded(download: Download) {
             Log.d(TAG, "Added Download: ${download.url}")
