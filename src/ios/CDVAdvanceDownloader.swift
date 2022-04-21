@@ -26,6 +26,10 @@ struct CDVADParam {
         if let arg = args["file_name"] as? String {
             fileName = arg
         }
+        if let arg = args["notification_title"] as? String {
+            notificationTitle = arg
+        }
+
     }
 }
 
@@ -90,7 +94,7 @@ struct CDVADParam {
             return
         }
         
-        var task = CDVADTask(id: id, url: url, headers: headers, size: size, filePath: filePath, fileName: fileName)
+        var task = CDVADTask(id: id, url: url, headers: headers, size: size, filePath: filePath, fileName: fileName, notificationTitle: param.notificationTitle)
         task.onChangeStatus = { [weak self] status in
             guard let self = self, let cIDs = self.onChangedStatusCallbackIDs[id] else { return }
             let result: [String:Any] = [
@@ -137,7 +141,8 @@ struct CDVADParam {
                 )
             }
             
-            CDVADNotification.send(title: "", body: "\(fileName) のダウンロードが完了しました", badge: 0)
+            CDVADNotification.send(title: "", body: "\(task.notificationTitle ?? fileName) のダウンロードが完了しました", badge: 0)
+
         }
         task.onFailed = { [weak self] message in
             guard let self = self, let cIDs = self.onFailedCallbackIDs[id] else { return }

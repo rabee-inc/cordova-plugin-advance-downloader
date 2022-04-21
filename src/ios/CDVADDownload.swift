@@ -38,13 +38,16 @@ class CDVADTask {
     var onComplete: CDVADTaskOnComplete?
     var onFailed: CDVADTaskOnFailed?
     
-    init(id: String, url: URL, headers: [String:String], size: Int, filePath: String, fileName: String) {
+    
+    init(id: String, url: URL, headers: [String:String], size: Int, filePath: String, fileName: String, notificationTitle: String?) {
+
         self.id = id
         self.url = url
         self.headers = headers
         self.size = size
         self.filePath = filePath
         self.fileName = fileName
+        self.notificationTitle = notificationTitle
     }
 }
 
