@@ -504,7 +504,7 @@ class AdvanceDownloader : CordovaPlugin() {
             }
 
             val result = JSONObject()
-            result.put("file_url, download.fileUri)
+            result.put("file_url", download.fileUri)
             val r = PluginResult(PluginResult.Status.OK, result)
             ctxs?.forEach {
                 it.sendPluginResult(r)
