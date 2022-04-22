@@ -11,7 +11,6 @@ repositories() {
 
 dependencies {
     api 'com.android.support:multidex:1.0.3'
-
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.github.snuffy:Fetch:3.2.2'
     implementation "androidx.work:work-runtime:2.7.1"
