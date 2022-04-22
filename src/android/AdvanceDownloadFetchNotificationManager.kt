@@ -31,7 +31,6 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
         PendingIntent.FLAG_UPDATE_CURRENT
     }
 
-
     override val notificationManagerAction: String = "ADVANCE_DOWNLOADER_FETCH_NOTIFICATION_MANAGER_ACTION_" + System.currentTimeMillis()
 
     override val broadcastReceiver: BroadcastReceiver
@@ -195,7 +194,7 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
                 else -> ACTION_TYPE_INVALID
             }
             intent.putExtra(EXTRA_ACTION_TYPE, action)
-            return PendingIntent.getBroadcast(context, downloadNotification.notificationId + action, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+            return PendingIntent.getBroadcast(context, downloadNotification.notificationId + action, intent, pendingIntentFlag)
         }
     }
 
@@ -216,7 +215,7 @@ abstract class AdvanceDownloadFetchNotificationManager(context: Context) : Fetch
                 else -> ACTION_TYPE_INVALID
             }
             intent.putExtra(EXTRA_ACTION_TYPE, action)
-            return PendingIntent.getBroadcast(context, downloadNotification.notificationId + action, intent, pendingIntentFlag)
+            return PendingIntent.getBroadcast(context, groupId + action, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }
 
