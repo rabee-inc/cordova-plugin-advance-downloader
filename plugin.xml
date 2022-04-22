@@ -32,10 +32,6 @@
 
     <!--gradle file-->
     <framework src="src/android/build-extras.gradle" custom="true" type="gradleReference" />
-
-    <!--for support kotlin-->
-    <hook type="after_platform_add" src="scripts/android/copy_build_extras.js" />
-    <hook type="after_plugin_add" src="scripts/android/copy_build_extras.js" />
   </platform>
 
 
