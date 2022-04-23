@@ -37,6 +37,7 @@ class CDVADTask {
     var onProgress: CDVADTaskOnProgress?
     var onComplete: CDVADTaskOnComplete?
     var onFailed: CDVADTaskOnFailed?
+    var notificationTitle = ""
     
     
     init(id: String, url: URL, headers: [String:String], size: Int, filePath: String, fileName: String, notificationTitle: String?) {
@@ -47,7 +48,7 @@ class CDVADTask {
         self.size = size
         self.filePath = filePath
         self.fileName = fileName
-        self.notificationTitle = notificationTitle
+        self.notificationTitle = notificationTitle ?? ""
     }
 }
 

@@ -5,6 +5,8 @@ struct CDVADParam {
     var size: Int?
     var filePath: String?
     var fileName: String?
+    var notificationTitle: String?
+    
     
     init(cmd: CDVInvokedUrlCommand) {
         guard let args = cmd.argument(at: 0) as? [String:Any] else { return }
